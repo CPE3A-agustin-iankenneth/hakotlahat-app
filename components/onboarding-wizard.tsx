@@ -83,8 +83,8 @@ export default function OnboardingWizard({ userId, userEmail }: Props) {
   };
 
   return (
-    <div className="min-h-svh bg-[#f5f5f5] flex flex-col">
-      <div className="w-lg  mx-auto">
+    <div className="min-h-svh bg-background flex flex-col">
+      <div className="w-full max-w-lg mx-auto flex flex-col flex-1">
         {/* Header */}
         <header className="flex items-center gap-3 px-6 py-5">
           <Recycle className="size-6 text-primary" strokeWidth={2.5} />
@@ -225,7 +225,7 @@ function RoleCard({
       type="button"
       onClick={onSelect}
       className={cn(
-        "w-full text-left bg-white rounded-3xl p-5 flex items-start gap-4 transition-all border-2",
+        "w-full text-left bg-card rounded-3xl p-5 flex items-start gap-4 transition-all border-2",
         selected
           ? "border-primary shadow-sm"
           : "border-transparent shadow-xs",
@@ -265,7 +265,7 @@ function StepName({
           This is how you&apos;ll appear in the app.
         </p>
       </div>
-      <div className="bg-white rounded-3xl p-5 flex flex-col gap-3">
+      <div className="bg-card rounded-3xl p-5 flex flex-col gap-3">
         <Label htmlFor="full-name" className="text-sm font-semibold">
           Full name
         </Label>
@@ -294,7 +294,7 @@ function StepLocation() {
           Your location helps us route pickups efficiently.
         </p>
       </div>
-      <div className="bg-white rounded-3xl p-5 flex flex-col gap-4">
+      <div className="bg-card rounded-3xl p-5 flex flex-col gap-4">
         <div className="bg-muted rounded-2xl h-40 flex flex-col items-center justify-center gap-2 text-muted-foreground">
           <MapPin className="size-8 text-primary" />
           <p className="text-sm font-medium">Map coming soon</p>
@@ -334,7 +334,7 @@ function StepPhoto({
         </p>
       </div>
 
-      <div className="bg-white rounded-3xl p-6 flex flex-col items-center gap-5">
+      <div className="bg-card rounded-3xl p-6 flex flex-col items-center gap-5">
         {/* Avatar preview */}
         <div className="relative">
           <div className="size-28 rounded-full bg-muted overflow-hidden flex items-center justify-center">
@@ -352,7 +352,7 @@ function StepPhoto({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-2.5 border-4 border-white shadow-sm"
+            className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-2.5 border-4 border-card shadow-sm"
           >
             <Camera className="size-4" />
           </button>
