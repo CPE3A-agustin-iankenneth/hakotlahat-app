@@ -1,5 +1,6 @@
 import { ResidentSidebar } from "@/components/nav/resident-sidebar";
 import { ResidentMobileHeader, ResidentBottomNav } from "@/components/nav/resident-mobile-nav";
+import { ThemeProvider } from "next-themes";
 
 export default function ResidentLayout({
     children,
@@ -7,7 +8,8 @@ export default function ResidentLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <div className="flex h-screen overflow-hidden bg-background">
+        <ThemeProvider attribute="class" forcedTheme="light">
+            <div className="flex h-screen overflow-hidden bg-background">
             {/* Desktop: Sidebar — hidden on mobile */}
             <div className="hidden md:flex">
                 <ResidentSidebar />
@@ -31,6 +33,7 @@ export default function ResidentLayout({
                     <ResidentBottomNav />
                 </div>
             </div>
-        </div>
+            </div>
+        </ThemeProvider>
     );
 }

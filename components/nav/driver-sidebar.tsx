@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 const navItems = [
-  { href: "/drv/route", label: "Route", icon: Map },
+  { href: "/drv", label: "Route", icon: Map },
   { href: "/drv/schedule", label: "Schedule", icon: CalendarDays },
   { href: "/drv/points", label: "Points", icon: Trophy },
   { href: "/drv/alerts", label: "Alerts", icon: Bell, badge: 3 },

@@ -1,5 +1,6 @@
 import { DriverSidebar } from "@/components/nav/driver-sidebar";
 import { DriverMobileHeader, DriverBottomNav } from "@/components/nav/driver-mobile-nav";
+import { ThemeProvider } from "next-themes";
 
 export default function DriverLayout({
     children,
@@ -7,7 +8,8 @@ export default function DriverLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <div className="flex h-screen overflow-hidden bg-stone-950">
+        <ThemeProvider attribute="class" forcedTheme="dark">
+            <div className="flex h-screen overflow-hidden bg-stone-950">
             {/* Desktop: Sidebar — hidden on mobile */}
             <div className="hidden md:flex">
                 <DriverSidebar />
@@ -31,6 +33,7 @@ export default function DriverLayout({
                     <DriverBottomNav />
                 </div>
             </div>
-        </div>
+            </div>
+        </ThemeProvider>
     );
 }
