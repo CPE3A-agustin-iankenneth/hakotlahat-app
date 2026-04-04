@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import OnboardingWizard from "@/components/onboarding-wizard";
 
 export default async function OnboardingPage() {
@@ -21,5 +22,9 @@ export default async function OnboardingPage() {
     redirect(profile.role === "driver" ? "/drv" : "/res");
   }
 
-  return <OnboardingWizard userId={user.id} userEmail={user.email!} />;
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <OnboardingWizard userId={user.id} userEmail={user.email!} />
+    </Suspense>
+  );
 }
