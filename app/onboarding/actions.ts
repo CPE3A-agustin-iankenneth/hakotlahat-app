@@ -7,6 +7,9 @@ export async function completeOnboarding(data: {
   role: "resident" | "driver";
   full_name: string;
   avatar_url: string | null;
+  home_lat: number | null;
+  home_lng: number | null;
+  home_address: string | null;
 }) {
   const supabase = await createClient();
   const {
@@ -21,6 +24,9 @@ export async function completeOnboarding(data: {
     role: data.role,
     full_name: data.full_name,
     avatar_url: data.avatar_url,
+    home_lat: data.home_lat,
+    home_lng: data.home_lng,
+    home_address: data.home_address,
     has_onboarded: true,
   });
 

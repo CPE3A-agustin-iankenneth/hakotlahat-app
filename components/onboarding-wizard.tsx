@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useTransition } from "react";
+import { useState, useRef, useTransition, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,10 +12,20 @@ import {
   ChevronLeft,
   Recycle,
   User,
+  Search,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { uploadImage } from "@/lib/upload-image";
 import { completeOnboarding } from "../app/onboarding/actions";
+import {
+  Map,
+  useMap,
+  MapMarker,
+  MarkerContent,
+  MapControls,
+} from "@/components/ui/map";
+import type { MapViewport } from "@/components/ui/map";
 
 const TOTAL_STEPS = 4;
 
@@ -30,6 +40,11 @@ export default function OnboardingWizard({ userId, userEmail }: Props) {
   const [step, setStep] = useState(1);
   const [role, setRole] = useState<Role | null>(null);
   const [fullName, setFullName] = useState("");
+  const [locationData, setLocationData] = useState<{
+    lat: number | null;
+    lng: number | null;
+    address: string;
+  }>({ lat: null, lng: null, address: "" });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -75,6 +90,9 @@ export default function OnboardingWizard({ userId, userEmail }: Props) {
           role: role!,
           full_name: fullName.trim(),
           avatar_url: avatarUrl,
+          home_lat: locationData.lat,
+          home_lng: locationData.lng,
+          home_address: locationData.address || null,
         });
       } catch (err) {
         setError(err instanceof Error ? err.message : "Something went wrong");
@@ -115,7 +133,12 @@ export default function OnboardingWizard({ userId, userEmail }: Props) {
           {step === 2 && (
             <StepName value={fullName} onChange={setFullName} />
           )}
-          {step === 3 && <StepLocation />}
+          {step === 3 && (
+            <StepLocation
+              locationData={locationData}
+              onLocationChange={setLocationData}
+            />
+          )}
           {step === 4 && (
             <StepPhoto
               preview={avatarPreview}
@@ -283,34 +306,235 @@ function StepName({
 }
 
 /* ── Step 3: Location ────────────────────────────────────────────────── */
-function StepLocation() {
+type LocationData = { lat: number | null; lng: number | null; address: string };
+type GeoFeature = { label: string; lng: number; lat: number };
+
+// Default center: Philippines
+const DEFAULT_VIEWPORT: MapViewport = {
+  center: [121.774, 12.8797],
+  zoom: 5.5,
+  bearing: 0,
+  pitch: 0,
+};
+
+function StepLocation({
+  locationData,
+  onLocationChange,
+}: {
+  locationData: LocationData;
+  onLocationChange: (d: LocationData) => void;
+}) {
+  const [viewport, setViewport] = useState<MapViewport>(DEFAULT_VIEWPORT);
+  const [query, setQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<GeoFeature[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const reverseGeocode = useCallback(
+    async (lng: number, lat: number) => {
+      try {
+        const res = await fetch(`/api/geocode?type=reverse&lng=${lng}&lat=${lat}`);
+        const data: { features: GeoFeature[] } = await res.json();
+        const label = data.features[0]?.label ?? "";
+        onLocationChange({ lat, lng, address: label });
+      } catch {
+        onLocationChange({ lat, lng, address: "" });
+      }
+    },
+    [onLocationChange]
+  );
+
+  const handlePinDrop = useCallback(
+    (lng: number, lat: number) => {
+      reverseGeocode(lng, lat);
+    },
+    [reverseGeocode]
+  );
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setQuery(val);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!val.trim()) {
+      setSuggestions([]);
+      setShowDropdown(false);
+      return;
+    }
+    debounceRef.current = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const res = await fetch(`/api/geocode?type=search&q=${encodeURIComponent(val)}`);
+        const data: { features: GeoFeature[] } = await res.json();
+        setSuggestions(data.features);
+        setShowDropdown(data.features.length > 0);
+      } catch {
+        setSuggestions([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+  };
+
+  const handleSuggestionSelect = (feature: GeoFeature) => {
+    setQuery(feature.label);
+    setShowDropdown(false);
+    setSuggestions([]);
+    onLocationChange({ lat: feature.lat, lng: feature.lng, address: feature.label });
+    setViewport((v) => ({ ...v, center: [feature.lng, feature.lat], zoom: 15 }));
+  };
+
+  const handleClearSearch = () => {
+    setQuery("");
+    setSuggestions([]);
+    setShowDropdown(false);
+  };
+
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
           Where are you located?
         </h1>
         <p className="text-muted-foreground mt-1">
-          Your location helps us route pickups efficiently.
+          Search your address or drag the pin to your location.
         </p>
       </div>
-      <div className="bg-card rounded-3xl p-5 flex flex-col gap-4">
-        <div className="bg-muted rounded-2xl h-40 flex flex-col items-center justify-center gap-2 text-muted-foreground">
-          <MapPin className="size-8 text-primary" />
-          <p className="text-sm font-medium">Map coming soon</p>
-          <p className="text-xs text-center px-4">
-            You&apos;ll be able to pin your exact location on a map here.
-          </p>
+
+      {/* Search + Map container */}
+      <div className="relative rounded-3xl overflow-hidden bg-card border border-border shadow-xs">
+        {/* Search bar */}
+        <div ref={searchRef} className="absolute top-3 left-3 right-3 z-10">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
+            <Input
+              placeholder="Search your address..."
+              value={query}
+              onChange={handleSearchChange}
+              onFocus={() => suggestions.length > 0 && setShowDropdown(true)}
+              className="pl-9 pr-9 h-11 rounded-2xl bg-background/95 backdrop-blur border-0 shadow-md text-sm"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={handleClearSearch}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                {isSearching ? (
+                  <span className="size-4 block rounded-full border-2 border-muted-foreground border-t-transparent animate-spin" />
+                ) : (
+                  <X className="size-4" />
+                )}
+              </button>
+            )}
+          </div>
+
+          {/* Suggestions dropdown */}
+          {showDropdown && (
+            <ul className="mt-1 bg-background rounded-2xl shadow-lg border border-border overflow-hidden">
+              {suggestions.map((s, i) => (
+                <li key={i}>
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => handleSuggestionSelect(s)}
+                    className="w-full text-left px-4 py-3 text-sm hover:bg-muted flex items-start gap-2.5 transition-colors"
+                  >
+                    <MapPin className="size-4 text-primary shrink-0 mt-0.5" />
+                    <span className="line-clamp-2 text-foreground">{s.label}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
-        <div className="flex items-center gap-2 px-1">
-          <div className="size-2 rounded-full bg-primary/60 shrink-0" />
-          <p className="text-xs text-muted-foreground">
-            Your pickup address will be set up after launch.
-          </p>
-        </div>
+
+        {/* Map */}
+        <Map
+          theme="light"
+          viewport={viewport}
+          onViewportChange={setViewport}
+          className="h-[52vmax] max-h-[380px] min-h-[240px] w-full"
+        >
+          <MapClickHandler onMapClick={handlePinDrop} />
+          {locationData.lat !== null && locationData.lng !== null && (
+            <MapMarker
+              longitude={locationData.lng}
+              latitude={locationData.lat}
+              draggable
+              onDragEnd={({ lng, lat }) => handlePinDrop(lng, lat)}
+            >
+              <MarkerContent>
+                <MapPin className="size-9 text-primary drop-shadow-md -mb-1" />
+              </MarkerContent>
+            </MapMarker>
+          )}
+          <MapControls
+            showZoom
+            showLocate
+            position="bottom-right"
+            onLocate={({ longitude, latitude }) => {
+              handlePinDrop(longitude, latitude);
+              setViewport((v) => ({ ...v, center: [longitude, latitude], zoom: 15 }));
+            }}
+          />
+        </Map>
+      </div>
+
+      {/* Selected address label */}
+      <div className="flex items-start gap-2 px-1 min-h-[1.25rem]">
+        {locationData.lat !== null ? (
+          <>
+            <div className="size-2 rounded-full bg-primary shrink-0 mt-1.5" />
+            <p className="text-sm text-foreground line-clamp-2">
+              {locationData.address || `${locationData.lat.toFixed(5)}, ${locationData.lng!.toFixed(5)}`}
+            </p>
+          </>
+        ) : (
+          <>
+            <div className="size-2 rounded-full bg-muted-foreground/40 shrink-0 mt-1.5" />
+            <p className="text-sm text-muted-foreground">
+              No location selected — you can skip this step.
+            </p>
+          </>
+        )}
       </div>
     </div>
   );
+}
+
+// Inner component to attach map click handler via useMap()
+function MapClickHandler({
+  onMapClick,
+}: {
+  onMapClick: (lng: number, lat: number) => void;
+}) {
+  const { map, isLoaded } = useMap();
+  const onMapClickRef = useRef(onMapClick);
+  onMapClickRef.current = onMapClick;
+
+  useEffect(() => {
+    if (!map || !isLoaded) return;
+    const handler = (e: { lngLat: { lng: number; lat: number } }) => {
+      onMapClickRef.current(e.lngLat.lng, e.lngLat.lat);
+    };
+    map.on("click", handler);
+    return () => { map.off("click", handler); };
+  }, [map, isLoaded]);
+
+  return null;
 }
 
 /* ── Step 4: Profile picture ─────────────────────────────────────────── */
