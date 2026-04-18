@@ -1,5 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import Image from "next/image";
 
 export default async function ResidentPage() {
   const supabase = await createClient();
@@ -11,9 +14,16 @@ export default async function ResidentPage() {
 
   return (
     <div className="flex min-h-svh items-center justify-center p-6">
-      <p className="text-lg font-medium text-foreground">
-        You are in the Resident page.
-      </p>
+      <Card>
+        <CardHeader>
+          <CardTitle>Request Pickup</CardTitle>
+          <CardDescription>Request a pickup</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Image src="/images/feet.jpg" alt="" width={100} height={100} />
+          <Button>Request Pickup</Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
