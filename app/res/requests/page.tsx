@@ -29,9 +29,9 @@ export default async function RequestPage() {
         <div className="flex flex-row items-center bg-white p-5 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-300 group">
           {/* Image Section */}
           <div className="w-40 h-40 flex-shrink:0 mr-6">
-            <img
-              src="/path-to-your-bottles-image.png"
-              alt="Recycling"
+            <img 
+              src="/path-to-your-bottles-image.png" 
+              alt="Recycling" 
               className="w-full h-full object-cover rounded-2xl"
             />
           </div>
@@ -44,16 +44,12 @@ export default async function RequestPage() {
               </span>
             </div>
             {/* Request Title */}
-            <h2 className="text-2xl font-black text-gray-900 mb-2">
-              Plastic & Glass
-            </h2>
+            <h2 className="text-2xl font-black text-gray-900 mb-2">Plastic & Glass</h2>
             {/* Location Details */}
             <div className="flex items-start text-gray-500 mb-4">
               <MapPin className="w-4 h-4 mr-1 mt-1 flex-shrink:0" />
               <p className="text-sm font-medium leading-snug">
-                William Ville 3,
-                <br />
-                Arizona Street
+                William Ville 3,<br />Arizona Street
               </p>
             </div>
             {/* Action Buttons */}
@@ -71,9 +67,9 @@ export default async function RequestPage() {
         <div className="flex flex-row items-center bg-white p-5 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-300 group">
           {/* Image Section */}
           <div className="w-40 h-40 flex-shrink:0 mr-6">
-            <img
-              src="/path-to-your-bottles-image.png"
-              alt="Recycling"
+            <img 
+              src="/path-to-your-bottles-image.png" 
+              alt="Recycling" 
               className="w-full h-full object-cover rounded-2xl"
             />
           </div>
@@ -86,16 +82,12 @@ export default async function RequestPage() {
               </span>
             </div>
             {/* Request Title */}
-            <h2 className="text-2xl font-black text-gray-900 mb-2">
-              Paper & Card Boards
-            </h2>
+            <h2 className="text-2xl font-black text-gray-900 mb-2">Paper & Card Boards</h2>
             {/* Location Details */}
             <div className="flex items-start text-gray-500 mb-4">
               <MapPin className="w-4 h-4 mr-1 mt-1 flex-shrink:0" />
               <p className="text-sm font-medium leading-snug">
-                William Ville 3,
-                <br />
-                Arizona Street
+                William Ville 3,<br />Arizona Street
               </p>
             </div>
             {/* Action Buttons */}
@@ -113,9 +105,9 @@ export default async function RequestPage() {
         <div className="flex flex-row items-center bg-white p-5 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-300 group">
           {/* Image Section */}
           <div className="w-40 h-40 flex-shrink:0 mr-6">
-            <img
-              src="/path-to-your-bottles-image.png"
-              alt="Recycling"
+            <img 
+              src="/path-to-your-bottles-image.png" 
+              alt="Recycling" 
               className="w-full h-full object-cover rounded-2xl"
             />
           </div>
@@ -128,16 +120,12 @@ export default async function RequestPage() {
               </span>
             </div>
             {/* Request Title */}
-            <h2 className="text-2xl font-black text-gray-900 mb-2">
-              Electronic Wastes
-            </h2>
+            <h2 className="text-2xl font-black text-gray-900 mb-2">Electronic Wastes</h2>
             {/* Location Details */}
             <div className="flex items-start text-gray-500 mb-4">
               <MapPin className="w-4 h-4 mr-1 mt-1 flex-shrink:0" />
               <p className="text-sm font-medium leading-snug">
-                William Ville 3,
-                <br />
-                Arizona Street
+                William Ville 3,<br />Arizona Street
               </p>
             </div>
             {/* Action Buttons */}
@@ -155,9 +143,9 @@ export default async function RequestPage() {
         <div className="flex flex-row items-center bg-white p-5 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-300 group">
           {/* Image Section */}
           <div className="w-40 h-40 flex-shrink:0 mr-6">
-            <img
-              src="/path-to-your-bottles-image.png"
-              alt="Recycling"
+            <img 
+              src="/path-to-your-bottles-image.png" 
+              alt="Recycling" 
               className="w-full h-full object-cover rounded-2xl"
             />
           </div>
@@ -170,16 +158,12 @@ export default async function RequestPage() {
               </span>
             </div>
             {/* Request Title */}
-            <h2 className="text-2xl font-black text-gray-900 mb-2">
-              Metals & Aluminums
-            </h2>
+            <h2 className="text-2xl font-black text-gray-900 mb-2">Metals & Aluminums</h2>
             {/* Location Details */}
             <div className="flex items-start text-gray-500 mb-4">
               <MapPin className="w-4 h-4 mr-1 mt-1 flex-shrink:0" />
               <p className="text-sm font-medium leading-snug">
-                William Ville 3,
-                <br />
-                Arizona Street
+                William Ville 3,<br />Arizona Street
               </p>
             </div>
             {/* Action Buttons */}
@@ -193,6 +177,7 @@ export default async function RequestPage() {
             </div>
           </div>
         </div>
+
       </div>
     </div>
   );
