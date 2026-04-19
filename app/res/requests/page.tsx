@@ -6,11 +6,13 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 export default async function RequestPage() {
   return (
     <div>
+      {/* Header Section */}
       <div className="flex justify-between items-start px-10 pt-10">
         <div>
           <h1 className="text-4xl font-bold font-Roboto">Your Requests</h1>
           <p>Manage and track your active waste collection requests.</p>
         </div>
+        {/* New Request Button */}
         <Button className="bg-green-600 hover:bg-green-700 rounded-full">
           <Plus className="w-5 h-5" />
           New Request
@@ -24,7 +26,7 @@ export default async function RequestPage() {
           </TabsList>
         </Tabs>
       </div>
-
+      {/* Requests List */}
       <div className="grid grid-cols-1 lg:grid-cols-2 text-black p-10 gap-6">
         <div className="flex flex-row items-center bg-white p-5 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-300 group">
           {/* Image Section */}
@@ -177,8 +179,8 @@ export default async function RequestPage() {
             </div>
           </div>
         </div>
-
-      </div>
+      </div>  
+          
     </div>
   );
 }
