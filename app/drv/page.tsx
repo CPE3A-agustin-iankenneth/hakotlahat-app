@@ -87,22 +87,22 @@ export default function RoutePage() {
     // Add markers for stops
     routeData.stops.forEach((stop, index) => {
       const el = document.createElement('div');
-      el.className = 'w-8 h-8 rounded-full flex items-center justify-center font-bold text-white cursor-pointer';
+      el.className = 'w-8 h-8 rounded-full flex items-center justify-center font-bold text-foreground cursor-pointer';
 
       if (index === 0) {
-        el.className += ' bg-green-500';
+        el.className += ' bg-primary';
       } else if (index === routeData.stops.length - 1) {
-        el.className += ' bg-red-500';
+        el.className += ' bg-destructive';
       } else {
-        el.className += ' bg-blue-500';
+        el.className += ' bg-accent';
       }
 
       el.textContent = (index + 1).toString();
 
       const popup = new maplibregl.Popup({ offset: 25 }).setHTML(
-        `<div class="bg-gray-900 text-white p-3 rounded">
+        `<div class="bg-card text-foreground p-3 rounded">
           <p class="font-semibold">${stop.address}</p>
-          <p class="text-sm text-gray-300">${stop.contact}</p>
+          <p class="text-sm text-muted-foreground">${stop.contact}</p>
         </div>`
       );
 
@@ -153,26 +153,26 @@ export default function RoutePage() {
   const currentStop = selectedStop || routeData.stops[0];
 
   return (
-    <div className="flex h-screen bg-gray-950 text-white overflow-hidden">
+    <div className="flex h-screen bg-background text-foreground overflow-hidden">
       {/* Map Container */}
       <div className="flex-1 relative">
         <div ref={mapContainer} className="w-full h-full" />
 
         {/* Top Info Bar */}
-        <div className="absolute top-4 left-4 right-4 z-10 bg-gray-900/80 backdrop-blur rounded-lg p-4 flex justify-between items-center">
+        <div className="absolute top-4 left-4 right-4 z-10 bg-card/80 backdrop-blur rounded-lg p-4 flex justify-between items-center">
           <div className="flex gap-4">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-green-500 rounded-full" />
+              <div className="w-3 h-3 bg-primary rounded-full" />
               <span className="text-sm">GPS Signal: {routeData.gpsSignal}</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-blue-500 rounded-full" />
+              <div className="w-3 h-3 bg-accent rounded-full" />
               <span className="text-sm">5G Latency: {routeData.latency}</span>
             </div>
           </div>
           <div className="text-right">
-            <p className="text-xs text-gray-400">Top 5% Drivers this week</p>
-            <p className="text-lg font-bold text-green-400">
+            <p className="text-xs text-muted-foreground">Top 5% Drivers this week</p>
+            <p className="text-lg font-bold text-primary">
               {routeData.topPercentile}%
             </p>
           </div>
@@ -182,21 +182,21 @@ export default function RoutePage() {
         <div className="absolute bottom-6 left-4 z-10 flex flex-col gap-2">
           <Button
             size="icon"
-            className="bg-gray-800 hover:bg-gray-700 text-white"
+            className="bg-muted hover:bg-muted-foreground/20 text-foreground"
             onClick={() => map.current?.zoomIn()}
           >
             +
           </Button>
           <Button
             size="icon"
-            className="bg-gray-800 hover:bg-gray-700 text-white"
+            className="bg-muted hover:bg-muted-foreground/20 text-foreground"
             onClick={() => map.current?.zoomOut()}
           >
             −
           </Button>
           <Button
             size="icon"
-            className="bg-gray-800 hover:bg-gray-700 text-white"
+            className="bg-muted hover:bg-muted-foreground/20 text-foreground"
             onClick={() => map.current?.easeTo({ bearing: 0, pitch: 0 })}
           >
             <Navigation className="w-4 h-4" />
@@ -204,31 +204,31 @@ export default function RoutePage() {
         </div>
 
         {/* Vehicle Status */}
-        <div className="absolute bottom-6 left-20 z-10 bg-gray-900/80 backdrop-blur rounded-lg p-3 max-w-xs">
+        <div className="absolute bottom-6 left-20 z-10 bg-card/80 backdrop-blur rounded-lg p-3 max-w-xs">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
-            <span className="text-xs font-semibold text-gray-300">
+            <div className="w-3 h-3 bg-primary rounded-full animate-pulse" />
+            <span className="text-xs font-semibold text-muted-foreground">
               Vehicle Synced
             </span>
           </div>
-          <p className="text-xs text-gray-400 mt-1">{routeData.vehicleStatus}</p>
+          <p className="text-xs text-muted-foreground mt-1">{routeData.vehicleStatus}</p>
         </div>
       </div>
 
       {/* Right Sidebar - Route Details */}
-      <div className="w-96 bg-gray-900 border-l border-gray-800 overflow-y-auto">
+      <div className="w-96 bg-card border-l border-border overflow-y-auto">
         {/* Up Next Header */}
-        <div className="sticky top-0 bg-gray-900/95 backdrop-blur border-b border-gray-800 p-6 z-20">
+        <div className="sticky top-0 bg-card/95 backdrop-blur border-b border-border p-6 z-20">
           <div className="flex justify-between items-center">
             <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wide">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">
                 Up Next
               </p>
               <h2 className="text-2xl font-bold mt-2">
                 {currentStop.address}
               </h2>
             </div>
-            <div className="bg-red-500/20 text-red-400 px-3 py-1 rounded text-xs font-semibold">
+            <div className="bg-destructive/20 text-destructive px-3 py-1 rounded text-xs font-semibold">
               {currentStop.priority}
             </div>
           </div>
@@ -238,57 +238,57 @@ export default function RoutePage() {
         <div className="p-6 space-y-6">
           {/* Distance and Time */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-gray-800/50 rounded-lg p-4">
-              <p className="text-xs text-gray-400 uppercase tracking-wide">
+            <div className="bg-muted/50 rounded-lg p-4">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">
                 Distance
               </p>
-              <p className="text-3xl font-bold text-white mt-2">
+              <p className="text-3xl font-bold text-foreground mt-2">
                 {currentStop.distance}
-                <span className="text-lg text-gray-400 ml-1">km</span>
+                <span className="text-lg text-muted-foreground ml-1">km</span>
               </p>
             </div>
-            <div className="bg-gray-800/50 rounded-lg p-4">
-              <p className="text-xs text-gray-400 uppercase tracking-wide">
+            <div className="bg-muted/50 rounded-lg p-4">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">
                 Est. Time
               </p>
-              <p className="text-3xl font-bold text-green-400 mt-2">
+              <p className="text-3xl font-bold text-primary mt-2">
                 {currentStop.estTime}
-                <span className="text-lg text-gray-400 ml-1">min</span>
+                <span className="text-lg text-muted-foreground ml-1">min</span>
               </p>
             </div>
           </div>
 
           {/* Cargo Type */}
           <div className="flex items-start gap-3">
-            <Package className="w-5 h-5 text-gray-400 mt-0.5" />
+            <Package className="w-5 h-5 text-muted-foreground mt-0.5" />
             <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wide">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">
                 Cargo Type
               </p>
-              <p className="text-white font-medium">{currentStop.cargoType}</p>
+              <p className="text-foreground font-medium">{currentStop.cargoType}</p>
             </div>
           </div>
 
           {/* Contact */}
           <div className="flex items-start gap-3">
-            <Phone className="w-5 h-5 text-gray-400 mt-0.5" />
+            <Phone className="w-5 h-5 text-muted-foreground mt-0.5" />
             <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wide">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">
                 On-site Contact
               </p>
-              <p className="text-white font-medium">{currentStop.contact}</p>
-              <p className="text-sm text-gray-400">{currentStop.contactPhone}</p>
+              <p className="text-foreground font-medium">{currentStop.contact}</p>
+              <p className="text-sm text-muted-foreground">{currentStop.contactPhone}</p>
             </div>
           </div>
 
           {/* Instructions */}
           <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-gray-400 mt-0.5" />
+            <AlertCircle className="w-5 h-5 text-muted-foreground mt-0.5" />
             <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wide">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">
                 Instructions
               </p>
-              <p className="text-sm text-gray-300 mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 {currentStop.instructions}
               </p>
             </div>
@@ -296,8 +296,8 @@ export default function RoutePage() {
 
           {/* Route Stops List */}
           {routeData.stops.length > 1 && (
-            <div className="border-t border-gray-800 pt-6">
-              <p className="text-xs text-gray-500 uppercase tracking-wide mb-3">
+            <div className="border-t border-border pt-6">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-3">
                 Other Stops
               </p>
               <div className="space-y-2">
@@ -307,14 +307,14 @@ export default function RoutePage() {
                     onClick={() => setSelectedStop(stop)}
                     className={`w-full text-left p-3 rounded-lg transition-colors ${
                       selectedStop?.id === stop.id
-                        ? 'bg-green-500/20 border border-green-500'
-                        : 'bg-gray-800/50 hover:bg-gray-800'
+                        ? 'bg-primary/20 border border-primary'
+                        : 'bg-muted/50 hover:bg-muted-foreground/30'
                     }`}
                   >
                     <p className="text-sm font-medium">
                       Stop {index + 1}: {stop.address}
                     </p>
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-muted-foreground">
                       {stop.distance} km • {stop.estTime} min
                     </p>
                   </button>
@@ -325,13 +325,13 @@ export default function RoutePage() {
         </div>
 
         {/* Start Route Button */}
-        <div className="sticky bottom-0 bg-gray-900/95 backdrop-blur border-t border-gray-800 p-6">
+        <div className="sticky bottom-0 bg-card/95 backdrop-blur border-t border-border p-6">
           <Button
             onClick={() => setIsRouteStarted(!isRouteStarted)}
             className={`w-full py-6 text-lg font-bold transition-all ${
               isRouteStarted
-                ? 'bg-gray-700 hover:bg-gray-600'
-                : 'bg-green-500 hover:bg-green-600 text-black'
+                ? 'bg-muted-foreground/20 hover:bg-gray-600'
+                : 'bg-primary hover:bg-primary text-foreground'
             }`}
           >
             {isRouteStarted ? 'ROUTE ACTIVE' : 'START ROUTE'}

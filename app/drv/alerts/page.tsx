@@ -143,9 +143,9 @@ function FleetAlerts() {
 
                   {/* General */}
                   <div className="p-1 rounded-lg bg-card/30">
-                    <div className="flex items-center justify-between px-3 py-2 rounded-md bg-gray-300">
+                    <div className="flex items-center justify-between px-3 py-2 rounded-md bg-muted">
                       <div className="flex items-center gap-3">
-                        <div className="h-3 w-3 rounded-full bg-gray-600" />
+                        <div className="h-3 w-3 rounded-full bg-muted-foreground" />
                         <div className="text-sm text-foreground">General</div>
                       </div>
                       <div className="text-xl font-bold bg-foreground text-primary-foreground px-3 py-1 rounded-md">12</div>
@@ -158,7 +158,7 @@ function FleetAlerts() {
             <CardFooter className="px-0 pt-4">
               <div className="w-full">
                 <div className="text-xs text-muted-foreground mb-2">Unread Signal Strength</div>
-                <div className="h-20 rounded-lg bg-gray-300 flex flex-col items-center justify-center gap-2 p-3">
+                <div className="h-20 rounded-lg bg-muted flex flex-col items-center justify-center gap-2 p-3">
                   <ChartNoAxesColumn className="h-8 w-8 text-primary" />
                   <div className="text-sm font-semibold text-primary-foreground">SYSTEM OPTIMAL</div>
                 </div>
