@@ -10,6 +10,9 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -21,62 +24,21 @@ export default async function SettingsPage() {
 
   return (
     <div className="min-h-svh bg-background">
-      {/* Top Navigation Header */}
-      <div className="bg-card border-b sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search settings..."
-              className="w-full pl-10 pr-4 py-2 border border-border rounded-lg bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
-          <div className="flex items-center gap-6 ml-8">
-            <Bell className="h-5 w-5 text-muted-foreground cursor-pointer hover:text-foreground" />
-            <HelpCircle className="h-5 w-5 text-muted-foreground cursor-pointer hover:text-foreground" />
-            <span className="text-foreground font-medium">HakotLahat Portal</span>
-          </div>
-        </div>
-      </div>
-      {/* Profile Header */}
-      <div>
-        <div className="max-w-7xl mx-auto px-6 py-8 flex items-start justify-between">
-          <div className="flex items-start gap-6">
-            <div className="relative">
-              <div className="h-24 w-24 bg-linear-to-br bg-secondary rounded-full flex items-center justify-center text-foreground text-4xl font-bold">
-                MS
-              </div>
-              <div className="absolute bottom-0 right-0 h-6 w-6 bg-primary rounded-full border-2 border-white"></div>
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-foreground">Mateo Santos</h2>
-              <p className="text-muted-foreground flex items-center gap-2 mt-1">
-                <MapPin className="h-4 w-4" />
-                Route Contributor • Member since Jan 2024
-              </p>
-            </div>
-          </div>
-          <button className="bg-primary hover:bg-primary/90 text-foreground px-6 py-2 rounded-lg font-medium">
-            ✎ Edit Profile
-          </button>
-        </div>
-      </div>
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column */}
           <div className="lg:col-span-1 space-y-6">
             {/* Pickup Address */}
-            <div className="bg-card rounded-lg p-6 shadow-sm">
+            <Card className="p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
                   <MapPin className="h-5 w-5 text-primary" />
                   Pickup Address
                 </h3>
-                <button className="text-sm text-primary hover:text-primary font-medium">
+                <Button variant="link" className="text-sm text-primary hover:text-primary font-medium p-0 h-auto">
                   Pin New Location
-                </button>
+                </Button>
               </div>
               <div className="mb-4">
                 <h4 className="font-semibold text-foreground mb-1">
@@ -94,16 +56,16 @@ export default async function SettingsPage() {
                   </p>
                 </div>
               </div>
-            </div>
+            </Card>
             {/* Password & Security */}
-            <div className="bg-card rounded-lg p-6 shadow-sm">
+            <Card className="p-6 shadow-sm">
               <h3 className="text-lg font-bold text-foreground flex items-center gap-2 mb-4">
                 <Lock className="h-5 w-5 text-destructive" />
                 Password & Security
               </h3>
 
               <div className="space-y-0">
-                <button className="w-full text-left py-3 px-0 hover:bg-background rounded-lg flex items-center justify-between group border-b">
+                <Button variant="ghost" className="w-full text-left py-6 px-4 hover:bg-background rounded-lg flex items-center justify-between group border-b h-auto">
                   <div>
                     <p className="font-semibold text-foreground">
                       Change Password
@@ -113,8 +75,8 @@ export default async function SettingsPage() {
                     </p>
                   </div>
                   <span className="text-muted-foreground">›</span>
-                </button>
-                <button className="w-full text-left py-3 px-0 hover:bg-background rounded-lg flex items-center justify-between group">
+                </Button>
+                <Button variant="ghost" className="w-full text-left py-6 px-4 hover:bg-background rounded-lg flex items-center justify-between group h-auto">
                   <div>
                     <p className="font-semibold text-foreground">
                       Two-Factor Authentication
@@ -122,14 +84,14 @@ export default async function SettingsPage() {
                     <p className="text-sm text-muted-foreground">Currently Enabled</p>
                   </div>
                   <span className="text-muted-foreground">›</span>
-                </button>
+                </Button>
               </div>
-            </div>
+            </Card>
           </div>
           {/* Right Column */}
           <div className="lg:col-span-2 space-y-6">
             {/* Notification Settings */}
-            <div className="bg-card rounded-lg p-6 shadow-sm">
+            <Card className="p-6 shadow-sm">
               <h3 className="text-lg font-bold text-foreground flex items-center gap-2 mb-6">
                 <Bell className="h-5 w-5 text-primary" />
                 Notification Settings
@@ -186,19 +148,24 @@ export default async function SettingsPage() {
                   <Switch className="ml-4 flex-shrink-0" />
                 </div>
               </div>
-            </div>
+            </Card>
             {/* Language & Localization */}
-            <div className="bg-card rounded-lg p-6 shadow-sm">
+            <Card className="p-6 shadow-sm">
               <h3 className="text-lg font-bold text-foreground flex items-center gap-2 mb-6">
                 <Globe className="h-5 w-5 text-muted-foreground" />
                 Language & Localization
               </h3>
 
-              <select className="w-full border border-border rounded-lg px-4 py-3 text-foreground bg-card focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer">
-                <option>English (Philippines)</option>
-                <option>Tagalog</option>
-              </select>
-            </div>
+              <Select defaultValue="english">
+                <SelectTrigger className="w-full h-12 rounded-lg bg-card">
+                  <SelectValue placeholder="Select Language" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="english">English (Philippines)</SelectItem>
+                  <SelectItem value="tagalog">Tagalog</SelectItem>
+                </SelectContent>
+              </Select>
+            </Card>
           </div>
         </div>
         {/* Danger Zone */}
@@ -208,10 +175,10 @@ export default async function SettingsPage() {
             Once you sign out, you will need to re-authenticate to access your
             routes.
           </p>
-          <button className="bg-destructive/20 hover:bg-destructive/30 text-destructive px-6 py-2 rounded-lg font-medium flex items-center gap-2">
+          <Button variant="destructive" className="bg-destructive/20 hover:bg-destructive/30 text-destructive px-6 py-2 rounded-lg font-medium flex items-center gap-2">
             <LogOut className="h-4 w-4" />
             Sign Out
-          </button>
+          </Button>
         </div>
       </div>
     </div>

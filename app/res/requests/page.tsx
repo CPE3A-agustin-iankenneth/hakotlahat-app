@@ -1,4 +1,6 @@
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Plus, MapPin, Trash2 } from "lucide-react";
 import { AppWindowIcon, CodeIcon } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -39,7 +41,7 @@ export default async function RequestPage() {
       </div>
       {/* Requests List */}
       <div className="grid grid-cols-1 lg:grid-cols-2 text-foreground p-10 gap-6">
-        <div className="flex flex-row items-center bg-card p-5 rounded-3xl border border-border shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-300 group">
+        <Card className="flex flex-row items-center p-5 rounded-3xl hover:shadow-md hover:scale-[1.02] transition-all duration-300 group">
           {/* Image Section */}
           <div className="w-40 h-40 flex-shrink:0 mr-6">
             <img
@@ -52,9 +54,7 @@ export default async function RequestPage() {
           <div className="flex-1 flex flex-col h-full">
             <div className="flex justify-between items-center mb-1">
               <span className="font-bold text-foreground">April 19, 2026</span>
-              <span className="bg-primary/20 text-primary px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-                Pending
-              </span>
+              <Badge variant="secondary" className="uppercase tracking-wider">Pending</Badge>
             </div>
             {/* Request Title */}
             <h2 className="text-2xl font-black text-foreground mb-2">
@@ -71,17 +71,15 @@ export default async function RequestPage() {
             </div>
             {/* Action Buttons */}
             <div className="flex items-center justify-between mt-auto">
-              <button className="border-2 border-border text-primary font-bold py-2 px-6 rounded-full hover:bg-primary/10 hover:border-primary/20 transition-colors">
-                View Details
-              </button>
-              <button className="p-2 text-destructive hover:text-destructive/80 transition-colors">
+              <Button variant="outline" className="rounded-full border-2 font-bold px-6 text-primary hover:bg-primary/10">View Details</Button>
+              <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive/80 hover:bg-destructive/10">
                 <Trash2 size={20} />
-              </button>
+              </Button>
             </div>
           </div>
-        </div>
+        </Card>
 
-        <div className="flex flex-row items-center bg-card p-5 rounded-3xl border border-border shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-300 group">
+        <Card className="flex flex-row items-center p-5 rounded-3xl hover:shadow-md hover:scale-[1.02] transition-all duration-300 group">
           {/* Image Section */}
           <div className="w-40 h-40 flex-shrink:0 mr-6">
             <img
@@ -94,9 +92,7 @@ export default async function RequestPage() {
           <div className="flex-1 flex flex-col h-full">
             <div className="flex justify-between items-center mb-1">
               <span className="font-bold text-foreground">April 20, 2026</span>
-              <span className="bg-primary/20 text-primary px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-                Pending
-              </span>
+              <Badge variant="secondary" className="uppercase tracking-wider">Pending</Badge>
             </div>
             {/* Request Title */}
             <h2 className="text-2xl font-black text-foreground mb-2">
@@ -113,17 +109,15 @@ export default async function RequestPage() {
             </div>
             {/* Action Buttons */}
             <div className="flex items-center justify-between mt-auto">
-              <button className="border-2 border-border text-primary font-bold py-2 px-6 rounded-full hover:bg-primary/10 hover:border-primary/20 transition-colors">
-                View Details
-              </button>
-              <button className="p-2 text-destructive hover:text-destructive/80 transition-colors">
+              <Button variant="outline" className="rounded-full border-2 font-bold px-6 text-primary hover:bg-primary/10">View Details</Button>
+              <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive/80 hover:bg-destructive/10">
                 <Trash2 size={20} />
-              </button>
+              </Button>
             </div>
           </div>
-        </div>
+        </Card>
 
-        <div className="flex flex-row items-center bg-card p-5 rounded-3xl border border-border shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-300 group">
+        <Card className="flex flex-row items-center p-5 rounded-3xl hover:shadow-md hover:scale-[1.02] transition-all duration-300 group">
           {/* Image Section */}
           <div className="w-40 h-40 flex-shrink:0 mr-6">
             <img
@@ -136,9 +130,7 @@ export default async function RequestPage() {
           <div className="flex-1 flex flex-col h-full">
             <div className="flex justify-between items-center mb-1">
               <span className="font-bold text-foreground">April 20, 2026</span>
-              <span className="bg-primary/20 text-primary px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-                Pending
-              </span>
+              <Badge variant="secondary" className="uppercase tracking-wider">Pending</Badge>
             </div>
             {/* Request Title */}
             <h2 className="text-2xl font-black text-foreground mb-2">
@@ -155,17 +147,15 @@ export default async function RequestPage() {
             </div>
             {/* Action Buttons */}
             <div className="flex items-center justify-between mt-auto">
-              <button className="border-2 border-border text-primary font-bold py-2 px-6 rounded-full hover:bg-primary/10 hover:border-primary/20 transition-colors">
-                View Details
-              </button>
-              <button className="p-2 text-destructive hover:text-destructive/80 transition-colors">
+              <Button variant="outline" className="rounded-full border-2 font-bold px-6 text-primary hover:bg-primary/10">View Details</Button>
+              <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive/80 hover:bg-destructive/10">
                 <Trash2 size={20} />
-              </button>
+              </Button>
             </div>
           </div>
-        </div>
+        </Card>
 
-        <div className="flex flex-row items-center bg-card p-5 rounded-3xl border border-border shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-300 group">
+        <Card className="flex flex-row items-center p-5 rounded-3xl hover:shadow-md hover:scale-[1.02] transition-all duration-300 group">
           {/* Image Section */}
           <div className="w-40 h-40 flex-shrink:0 mr-6">
             <img
@@ -178,9 +168,7 @@ export default async function RequestPage() {
           <div className="flex-1 flex flex-col h-full">
             <div className="flex justify-between items-center mb-1">
               <span className="font-bold text-foreground">April 20, 2026</span>
-              <span className="bg-primary/20 text-primary px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-                Pending
-              </span>
+              <Badge variant="secondary" className="uppercase tracking-wider">Pending</Badge>
             </div>
             {/* Request Title */}
             <h2 className="text-2xl font-black text-foreground mb-2">
@@ -197,15 +185,13 @@ export default async function RequestPage() {
             </div>
             {/* Action Buttons */}
             <div className="flex items-center justify-between mt-auto">
-              <button className="border-2 border-border text-primary font-bold py-2 px-6 rounded-full hover:bg-primary/10 hover:border-primary/20 transition-colors">
-                View Details
-              </button>
-              <button className="p-2 text-destructive hover:text-destructive/80 transition-colors">
+              <Button variant="outline" className="rounded-full border-2 font-bold px-6 text-primary hover:bg-primary/10">View Details</Button>
+              <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive/80 hover:bg-destructive/10">
                 <Trash2 size={20} />
-              </button>
+              </Button>
             </div>
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );

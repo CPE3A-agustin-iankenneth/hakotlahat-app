@@ -1,4 +1,6 @@
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Flame, CheckCircle2, TrendingUp, Navigation, ChevronRight } from "lucide-react";
 
 export default async function DriverPointsPage() {
@@ -81,7 +83,7 @@ export default async function DriverPointsPage() {
     <div className="min-h-screen bg-background text-foreground font-sans p-8">
       <div className="max-w-5xl mx-auto space-y-8">
         {/* Main Card Container */}
-        <div className="bg-card/50 border border-primary/30 rounded-3xl p-12 flex items-center justify-between gap-12">
+        <Card className="bg-card/50 border-primary/30 rounded-3xl p-12 flex items-center justify-between gap-12">
           {/* Left Side - Content */}
           <div className="flex flex-col gap-6 flex-1">
             <div>
@@ -125,19 +127,19 @@ export default async function DriverPointsPage() {
               <p className="text-sm uppercase tracking-widest text-muted-foreground font-bold">Total Points</p>
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* Stats Cards Grid */}
         <div className="grid grid-cols-4 gap-4">
           {stats.map((stat, index) => {
             const Icon = stat.icon;
             return (
-              <div key={index} className="bg-card/50 border border-border rounded-2xl p-6">
+              <Card key={index} className="bg-card/50 rounded-2xl p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <Icon size={20} className={stat.badgeColor} />
-                  <span className={`text-xs font-bold ${stat.badgeColor}`}>
+                  <Badge variant="outline" className={`text-xs font-bold border-none ${stat.badgeColor}`}>
                     {stat.badge}
-                  </span>
+                  </Badge>
                 </div>
                 <p className="text-xs uppercase tracking-widest text-muted-foreground font-bold mb-2">
                   {stat.title}
@@ -145,21 +147,21 @@ export default async function DriverPointsPage() {
                 <p className="text-3xl font-extrabold text-foreground">
                   {stat.value}
                 </p>
-              </div>
+              </Card>
             );
           })}
         </div>
 
         {/* Fleet Leaderboard */}
-        <div className="bg-card/50 border border-border rounded-3xl p-8">
+        <Card className="bg-card/50 rounded-3xl p-8">
           <div className="flex items-center justify-between mb-8">
             <div>
               <h2 className="text-2xl font-extrabold mb-1">Fleet Leaderboard</h2>
               <p className="text-muted-foreground text-sm">Weekly rankings across all regional hubs</p>
             </div>
-            <button className="text-primary text-sm font-semibold hover:text-primary/80 flex items-center gap-1">
+            <Button variant="link" className="text-primary font-semibold hover:text-primary/80 flex items-center gap-1 p-0 h-auto">
               View Full Rankings <ChevronRight size={16} />
-            </button>
+            </Button>
           </div>
 
           <div className="space-y-4">
@@ -194,9 +196,9 @@ export default async function DriverPointsPage() {
                     <div className="flex items-center gap-2">
                       <p className="font-semibold text-foreground">{driver.name}</p>
                       {driver.badge && (
-                        <span className={`${driver.badgeBg} text-foreground text-xs px-2 py-1 rounded-full font-bold`}>
+                        <Badge className={`${driver.badgeBg} text-foreground text-xs`}>
                           {driver.badge}
-                        </span>
+                        </Badge>
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground">{driver.role}</p>
@@ -226,7 +228,7 @@ export default async function DriverPointsPage() {
               </div>
             ))}
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );

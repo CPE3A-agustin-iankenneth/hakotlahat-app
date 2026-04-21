@@ -5,6 +5,7 @@ import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { Phone, Package, AlertCircle, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 interface RouteStop {
   id: string;
@@ -228,9 +229,9 @@ export default function RoutePage() {
                 {currentStop.address}
               </h2>
             </div>
-            <div className="bg-destructive/20 text-destructive px-3 py-1 rounded text-xs font-semibold">
+            <Badge variant="destructive" className="bg-destructive/20 text-destructive hover:bg-destructive/20 rounded">
               {currentStop.priority}
-            </div>
+            </Badge>
           </div>
         </div>
 
@@ -302,10 +303,11 @@ export default function RoutePage() {
               </p>
               <div className="space-y-2">
                 {routeData.stops.map((stop, index) => (
-                  <button
+                  <Button
                     key={stop.id}
+                    variant="ghost"
                     onClick={() => setSelectedStop(stop)}
-                    className={`w-full text-left p-3 rounded-lg transition-colors ${
+                    className={`w-full h-auto justify-start text-left p-3 rounded-lg transition-colors ${
                       selectedStop?.id === stop.id
                         ? 'bg-primary/20 border border-primary'
                         : 'bg-muted/50 hover:bg-muted-foreground/30'
@@ -317,7 +319,7 @@ export default function RoutePage() {
                     <p className="text-xs text-muted-foreground">
                       {stop.distance} km • {stop.estTime} min
                     </p>
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>

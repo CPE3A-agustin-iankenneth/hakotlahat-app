@@ -191,48 +191,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Top Bar */}
-      <header className="sticky top-0 z-30 bg-card border-b border-border px-6 py-3 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3 bg-muted rounded-full px-4 py-2 flex-1 max-w-md">
-          <Search size={18} className="text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search pickups, stats, or help..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-transparent outline-none text-sm w-full text-foreground placeholder:text-muted-foreground"
-          />
-        </div>
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => setNotifOpen(true)}
-            className="relative text-muted-foreground hover:text-foreground transition-colors"
-            aria-label="Notifications"
-          >
-            <Bell size={20} />
-            {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full" />
-            )}
-          </button>
-          <button
-            onClick={() => setHelpOpen(true)}
-            className="text-muted-foreground hover:text-foreground transition-colors"
-            aria-label="Help"
-          >
-            <HelpCircle size={20} />
-          </button>
-          <div className="flex items-center gap-2 pl-3 border-l border-border">
-            <div className="text-right">
-              <p className="text-sm font-semibold">{user.name}</p>
-              <p className="text-xs text-muted-foreground">{user.tier}</p>
-            </div>
-            <button className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm hover:bg-primary/30 transition-colors">
-              {user.name.charAt(0)}
-            </button>
-          </div>
-        </div>
-      </header>
-
       <main className="max-w-6xl mx-auto px-6 py-8 space-y-6">
         {/* Hero Row */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
@@ -255,13 +213,13 @@ const Index = () => {
                 Schedule a bulk waste pickup in seconds and track our eco-friendly disposal process in real-time.
               </p>
             </div>
-            <button
+            <Button
               onClick={() => setPickupOpen(true)}
-              className="mt-6 inline-flex items-center gap-2 bg-primary text-primary-foreground font-semibold px-6 py-3 rounded-full hover:opacity-90 transition-opacity w-fit"
+              className="mt-6 rounded-full px-6 py-6 font-semibold w-fit"
             >
               <PlusCircle size={18} />
               Request New Pickup
-            </button>
+            </Button>
           </motion.div>
 
           {/* AI Volume Check */}
@@ -281,12 +239,13 @@ const Index = () => {
                 Not sure if your load fits? Snap a photo of your waste pile. Our AI will estimate the volume and assign the right vehicle.
               </p>
             </div>
-            <button
+            <Button
+              variant="secondary"
               onClick={() => setScanOpen(true)}
-              className="mt-6 bg-primary-foreground text-primary font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity w-fit"
+              className="mt-6 rounded-xl px-6 py-6 font-semibold text-primary w-fit"
             >
               Scan Items Now
-            </button>
+            </Button>
           </motion.div>
         </div>
 
@@ -378,25 +337,27 @@ const Index = () => {
         >
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold">Recent Activity</h3>
-            <button
+            <Button
+              variant="link"
               onClick={() => toast(`Showing all activity — ${activity.length} entries total.`)}
-              className="text-sm text-primary font-semibold hover:underline"
+              className="text-primary font-semibold p-0 h-auto"
             >
               View All
-            </button>
+            </Button>
           </div>
           <div className="divide-y divide-border">
             {filteredActivity.length === 0 && (
               <p className="text-sm text-muted-foreground py-6 text-center">No activity matches your search.</p>
             )}
             {filteredActivity.map((item) => (
-              <button
+              <Button
                 key={item.id}
+                variant="ghost"
                 onClick={() => {
                   setSelectedActivity(item);
                   setActivityOpen(true);
                 }}
-                className="w-full flex items-center justify-between py-3 hover:bg-muted/50 -mx-2 px-2 rounded-lg transition-colors text-left"
+                className="w-full h-auto flex items-center justify-between py-4 hover:bg-muted/50 rounded-lg transition-colors text-left"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center">
@@ -414,7 +375,7 @@ const Index = () => {
                   </div>
                   <ChevronRight size={16} className="text-muted-foreground" />
                 </div>
-              </button>
+              </Button>
             ))}
           </div>
         </motion.div>
