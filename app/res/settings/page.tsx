@@ -10,6 +10,9 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -20,128 +23,87 @@ export default async function SettingsPage() {
   if (!user) redirect("/auth/login");
 
   return (
-    <div className="min-h-svh bg-gray-50">
-      {/* Top Navigation Header */}
-      <div className="bg-white border-b sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search settings..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-            />
-          </div>
-          <div className="flex items-center gap-6 ml-8">
-            <Bell className="h-5 w-5 text-gray-600 cursor-pointer hover:text-gray-900" />
-            <HelpCircle className="h-5 w-5 text-gray-600 cursor-pointer hover:text-gray-900" />
-            <span className="text-gray-900 font-medium">HakotLahat Portal</span>
-          </div>
-        </div>
-      </div>
-      {/* Profile Header */}
-      <div>
-        <div className="max-w-7xl mx-auto px-6 py-8 flex items-start justify-between">
-          <div className="flex items-start gap-6">
-            <div className="relative">
-              <div className="h-24 w-24 bg-linear-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center text-white text-4xl font-bold">
-                MS
-              </div>
-              <div className="absolute bottom-0 right-0 h-6 w-6 bg-green-500 rounded-full border-2 border-white"></div>
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">Mateo Santos</h2>
-              <p className="text-gray-600 flex items-center gap-2 mt-1">
-                <MapPin className="h-4 w-4" />
-                Route Contributor • Member since Jan 2024
-              </p>
-            </div>
-          </div>
-          <button className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium">
-            ✎ Edit Profile
-          </button>
-        </div>
-      </div>
+    <div className="min-h-svh bg-background">
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column */}
           <div className="lg:col-span-1 space-y-6">
             {/* Pickup Address */}
-            <div className="bg-white rounded-lg p-6 shadow-sm">
+            <Card className="p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                  <MapPin className="h-5 w-5 text-green-600" />
+                <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                  <MapPin className="h-5 w-5 text-primary" />
                   Pickup Address
                 </h3>
-                <button className="text-sm text-green-600 hover:text-green-700 font-medium">
+                <Button variant="link" className="text-sm text-primary hover:text-primary font-medium p-0 h-auto">
                   Pin New Location
-                </button>
+                </Button>
               </div>
               <div className="mb-4">
-                <h4 className="font-semibold text-gray-900 mb-1">
+                <h4 className="font-semibold text-foreground mb-1">
                   Current Primary Residence
                 </h4>
-                <p className="text-gray-600 text-sm">
+                <p className="text-muted-foreground text-sm">
                   456 Maharika St., Malolios, Bulacan, 3000
                 </p>
               </div>
               <div className="bg-gradient-to-br from-green-200 to-green-100 rounded-lg h-48 relative overflow-hidden flex items-center justify-center">
                 <div className="text-center">
-                  <div className="text-green-700 text-5xl mb-2">📍</div>
-                  <p className="text-xs text-gray-700 font-medium">
+                  <div className="text-primary text-5xl mb-2">📍</div>
+                  <p className="text-xs text-foreground font-medium">
                     GPS: 14.8527° N, 120.8960° E
                   </p>
                 </div>
               </div>
-            </div>
+            </Card>
             {/* Password & Security */}
-            <div className="bg-white rounded-lg p-6 shadow-sm">
-              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2 mb-4">
-                <Lock className="h-5 w-5 text-red-600" />
+            <Card className="p-6 shadow-sm">
+              <h3 className="text-lg font-bold text-foreground flex items-center gap-2 mb-4">
+                <Lock className="h-5 w-5 text-destructive" />
                 Password & Security
               </h3>
 
               <div className="space-y-0">
-                <button className="w-full text-left py-3 px-0 hover:bg-gray-50 rounded-lg flex items-center justify-between group border-b">
+                <Button variant="ghost" className="w-full text-left py-6 px-4 hover:bg-background rounded-lg flex items-center justify-between group border-b h-auto">
                   <div>
-                    <p className="font-semibold text-gray-900">
+                    <p className="font-semibold text-foreground">
                       Change Password
                     </p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-muted-foreground">
                       Last updated 3 months ago
                     </p>
                   </div>
-                  <span className="text-gray-400">›</span>
-                </button>
-                <button className="w-full text-left py-3 px-0 hover:bg-gray-50 rounded-lg flex items-center justify-between group">
+                  <span className="text-muted-foreground">›</span>
+                </Button>
+                <Button variant="ghost" className="w-full text-left py-6 px-4 hover:bg-background rounded-lg flex items-center justify-between group h-auto">
                   <div>
-                    <p className="font-semibold text-gray-900">
+                    <p className="font-semibold text-foreground">
                       Two-Factor Authentication
                     </p>
-                    <p className="text-sm text-gray-600">Currently Enabled</p>
+                    <p className="text-sm text-muted-foreground">Currently Enabled</p>
                   </div>
-                  <span className="text-gray-400">›</span>
-                </button>
+                  <span className="text-muted-foreground">›</span>
+                </Button>
               </div>
-            </div>
+            </Card>
           </div>
           {/* Right Column */}
           <div className="lg:col-span-2 space-y-6">
             {/* Notification Settings */}
-            <div className="bg-white rounded-lg p-6 shadow-sm">
-              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2 mb-6">
-                <Bell className="h-5 w-5 text-green-600" />
+            <Card className="p-6 shadow-sm">
+              <h3 className="text-lg font-bold text-foreground flex items-center gap-2 mb-6">
+                <Bell className="h-5 w-5 text-primary" />
                 Notification Settings
               </h3>
               <div className="space-y-4">
                 {/* Push Notifications */}
                 <div className="flex items-start justify-between py-4 border-b">
                   <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900">
+                    <h4 className="font-semibold text-foreground">
                       Push Notifications
                     </h4>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-muted-foreground mt-1">
                       Real-time alerts for waste collection arrivals and route
                       updates.
                     </p>
@@ -151,8 +113,8 @@ export default async function SettingsPage() {
                 {/* SMS Alerts */}
                 <div className="flex items-start justify-between py-4 border-b">
                   <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900">SMS Alerts</h4>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <h4 className="font-semibold text-foreground">SMS Alerts</h4>
+                    <p className="text-sm text-muted-foreground mt-1">
                       Receive critical service interruptions directly to your
                       mobile phone.
                     </p>
@@ -162,10 +124,10 @@ export default async function SettingsPage() {
                 {/* Weather Delays */}
                 <div className="flex items-start justify-between py-4 border-b">
                   <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900">
+                    <h4 className="font-semibold text-foreground">
                       Weather Delays
                     </h4>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-muted-foreground mt-1">
                       Get notified if severe weather impacts your scheduled
                       collection time.
                     </p>
@@ -175,10 +137,10 @@ export default async function SettingsPage() {
                 {/* Weekly Analytics Email */}
                 <div className="flex items-start justify-between py-4">
                   <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900">
+                    <h4 className="font-semibold text-foreground">
                       Weekly Analytics Email
                     </h4>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-muted-foreground mt-1">
                       Receive a summary of your recycling impact and waste
                       metrics.
                     </p>
@@ -186,32 +148,37 @@ export default async function SettingsPage() {
                   <Switch className="ml-4 flex-shrink-0" />
                 </div>
               </div>
-            </div>
+            </Card>
             {/* Language & Localization */}
-            <div className="bg-white rounded-lg p-6 shadow-sm">
-              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2 mb-6">
-                <Globe className="h-5 w-5 text-gray-600" />
+            <Card className="p-6 shadow-sm">
+              <h3 className="text-lg font-bold text-foreground flex items-center gap-2 mb-6">
+                <Globe className="h-5 w-5 text-muted-foreground" />
                 Language & Localization
               </h3>
 
-              <select className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 cursor-pointer">
-                <option>English (Philippines)</option>
-                <option>Tagalog</option>
-              </select>
-            </div>
+              <Select defaultValue="english">
+                <SelectTrigger className="w-full h-12 rounded-lg bg-card">
+                  <SelectValue placeholder="Select Language" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="english">English (Philippines)</SelectItem>
+                  <SelectItem value="tagalog">Tagalog</SelectItem>
+                </SelectContent>
+              </Select>
+            </Card>
           </div>
         </div>
         {/* Danger Zone */}
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 mt-8">
-          <h3 className="text-lg font-bold text-red-900 mb-2">Danger Zone</h3>
-          <p className="text-red-700 text-sm mb-4">
+        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-6 mt-8">
+          <h3 className="text-lg font-bold text-destructive mb-2">Danger Zone</h3>
+          <p className="text-destructive text-sm mb-4">
             Once you sign out, you will need to re-authenticate to access your
             routes.
           </p>
-          <button className="bg-red-100 hover:bg-red-200 text-red-700 px-6 py-2 rounded-lg font-medium flex items-center gap-2">
+          <Button variant="destructive" className="bg-destructive/20 hover:bg-destructive/30 text-destructive px-6 py-2 rounded-lg font-medium flex items-center gap-2">
             <LogOut className="h-4 w-4" />
             Sign Out
-          </button>
+          </Button>
         </div>
       </div>
     </div>
