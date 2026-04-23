@@ -21,6 +21,7 @@ import {
   PasswordInputStrengthChecker,
 } from "@/components/ui/password-input";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useRouter } from "next/navigation";
 
 interface AccountContentProps {
   userId: string;
@@ -36,6 +37,7 @@ export function AccountContent({
   initialAvatarUrl,
 }: AccountContentProps) {
   const supabase = createClient();
+  const router = useRouter();
   const [displayName, setDisplayName] = useState(initialFullName ?? "");
   const [draftName, setDraftName] = useState(initialFullName ?? "");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(initialAvatarUrl);
@@ -56,6 +58,7 @@ export function AccountContent({
   const [isSavingName, setIsSavingName] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
   const [isSavingAvatar, setIsSavingAvatar] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isAvatarOpen, setIsAvatarOpen] = useState(false);
   const [isNameOpen, setIsNameOpen] = useState(false);
   const [isPasswordOpen, setIsPasswordOpen] = useState(false);
@@ -197,6 +200,17 @@ export function AccountContent({
     }
   };
 
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await supabase.auth.signOut();
+      router.push("/auth/login");
+    } catch (err) {
+      console.error("Logout error:", err);
+      setIsLoggingOut(false);
+    }
+  };
+
   return (
     <div className="min-h-svh bg-background">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-6 py-8">
@@ -316,6 +330,25 @@ export function AccountContent({
               <p className="text-sm text-muted-foreground">
                 Use a strong password to keep your account secure.
               </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-destructive/50">
+            <CardHeader>
+              <CardTitle className="text-destructive">Sign out</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                You will be redirected to the login page after signing out.
+              </p>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+              >
+                {isLoggingOut ? "Signing out..." : "Sign out"}
+              </Button>
             </CardContent>
           </Card>
         </div>
