@@ -20,6 +20,7 @@ import {
   PasswordInput,
   PasswordInputStrengthChecker,
 } from "@/components/ui/password-input";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 interface AccountContentProps {
   userId: string;
@@ -466,14 +467,16 @@ export function AccountContent({
           <div className="space-y-4">
             <div className="grid gap-2">
               <Label htmlFor="new-password">New password</Label>
-              <PasswordInput
-                id="new-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter a new password"
-              >
-                <PasswordInputStrengthChecker />
-              </PasswordInput>
+              <TooltipProvider>
+                <PasswordInput
+                  id="new-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter a new password"
+                >
+                  <PasswordInputStrengthChecker />
+                </PasswordInput>
+              </TooltipProvider>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="confirm-password">Confirm password</Label>
