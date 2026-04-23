@@ -1,4 +1,4 @@
-import { connection } from "next/server";
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Card } from "@/components/ui/card";
@@ -6,10 +6,8 @@ import { Button } from "@/components/ui/button";
 import {
   CheckCircle2,
   ChevronRight,
-  MapPinned,
   Navigation,
   Package,
-  Plus,
   Route,
 } from "lucide-react";
 
@@ -47,8 +45,7 @@ function formatDistance(meters: number): string {
   return meters >= 1000 ? `${(meters / 1000).toFixed(1)} km` : `${meters} m`;
 }
 
-export default async function SchedulePage() {
-  await connection();
+async function SchedulePageContent() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -217,5 +214,13 @@ export default async function SchedulePage() {
         </div>
       </section>
     </div>
+  );
+}
+
+export default function SchedulePage() {
+  return (
+    <Suspense fallback={null}>
+      <SchedulePageContent />
+    </Suspense>
   );
 }

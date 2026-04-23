@@ -1,11 +1,10 @@
-import { connection } from "next/server";
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AdminDashboardContent } from "@/components/admin/admin-dashboard-content";
 import type { MunDriverSession, MunPickupRequest, MunDashboardStats } from "@/types/municipality";
 
-export default async function AdminDashboardPage() {
-  await connection();
+async function AdminDashboardPageContent() {
   const supabase = await createClient();
 
   const {
@@ -78,5 +77,13 @@ export default async function AdminDashboardPage() {
       activeSessions={(activeSessions as unknown as MunDriverSession[]) ?? []}
       pendingRequests={(pendingRequests as unknown as MunPickupRequest[]) ?? []}
     />
+  );
+}
+
+export default function AdminDashboardPage() {
+  return (
+    <Suspense fallback={null}>
+      <AdminDashboardPageContent />
+    </Suspense>
   );
 }
