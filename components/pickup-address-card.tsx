@@ -77,12 +77,12 @@ export default function PickupAddressCard({
     if (savedLocation.lat === null || savedLocation.lng === null) return;
     setPreviewViewport((v) => ({
       ...v,
-      center: [savedLocation.lng, savedLocation.lat],
+      center: [savedLocation.lng as number, savedLocation.lat as number],
       zoom: 15,
     }));
     setEditViewport((v) => ({
       ...v,
-      center: [savedLocation.lng, savedLocation.lat],
+      center: [savedLocation.lng as number, savedLocation.lat as number],
       zoom: 15,
     }));
   }, [savedLocation.lat, savedLocation.lng]);
@@ -176,7 +176,7 @@ export default function PickupAddressCard({
     if (savedLocation.lat !== null && savedLocation.lng !== null) {
       setEditViewport((v) => ({
         ...v,
-        center: [savedLocation.lng, savedLocation.lat],
+        center: [savedLocation.lng as number, savedLocation.lat as number],
         zoom: 15,
       }));
     } else {

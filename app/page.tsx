@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import {
   Truck,
   MapPin,
@@ -436,7 +437,8 @@ function CTA() {
   );
 }
 
-function Footer() {
+async function Footer() {
+  await connection();
   return (
     <footer className="border-t border-border bg-card">
       <div className="max-w-6xl mx-auto px-6 py-12">
