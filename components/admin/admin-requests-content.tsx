@@ -186,16 +186,6 @@ export function AdminRequestsContent({ requests }: Props) {
 
                             {/* Actions */}
                             <div className="flex gap-2 pt-1">
-                              {req.status === "pending" && (
-                                <Button
-                                  size="sm"
-                                  className="rounded-full"
-                                  disabled={isUpdating === req.id}
-                                  onClick={() => updateStatus(req.id, "scheduled")}
-                                >
-                                  Mark Scheduled
-                                </Button>
-                              )}
                               {req.status === "scheduled" && (
                                 <Button
                                   size="sm"

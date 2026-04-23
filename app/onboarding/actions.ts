@@ -11,8 +11,6 @@ export async function completeOnboarding(data: {
   home_lng: number | null;
   home_address: string | null;
   municipality_id?: string | null;
-  plate_number?: string;
-  capacity_volume?: number;
 }) {
   const supabase = await createClient();
   const {
@@ -37,17 +35,7 @@ export async function completeOnboarding(data: {
 
   if (userError) throw new Error(userError.message);
 
-  // If driver, create vehicle record
-  if (data.role === "driver" && data.plate_number && data.capacity_volume && data.municipality_id) {
-    const { error: vehicleError } = await supabase.from("vehicles").insert({
-      municipality_id: data.municipality_id,
-      plate_number: data.plate_number,
-      capacity_volume: data.capacity_volume,
-      status: "ACTIVE",
-    });
 
-    if (vehicleError) throw new Error(`Vehicle creation failed: ${vehicleError.message}`);
-  }
 
   redirect(data.role === "driver" ? "/drv" : "/res");
 }
