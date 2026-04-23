@@ -46,6 +46,11 @@ next-env.d.ts
 CLAUDE.md
 RULES.md
 
+# gemini
+.gemini
+.agents
+GEMINI.md
+
 # github
 .github
 
