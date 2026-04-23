@@ -5,6 +5,7 @@ import { AdminDashboardContent } from "@/components/admin/admin-dashboard-conten
 import type { MunDriverSession, MunPickupRequest, MunDashboardStats } from "@/types/municipality";
 
 export default async function AdminDashboardPage() {
+  await connection();
   const supabase = await createClient();
 
   const {

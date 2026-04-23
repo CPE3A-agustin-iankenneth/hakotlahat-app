@@ -5,6 +5,7 @@ import { AdminRoutesContent } from "@/components/admin/admin-routes-content";
 import type { MunRoute } from "@/types/municipality";
 
 export default async function AdminRoutesPage() {
+  await connection();
   const supabase = await createClient();
 
   const {

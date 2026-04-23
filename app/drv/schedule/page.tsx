@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Card } from "@/components/ui/card";
@@ -47,6 +48,7 @@ function formatDistance(meters: number): string {
 }
 
 export default async function SchedulePage() {
+  await connection();
   const supabase = await createClient();
   const {
     data: { user },

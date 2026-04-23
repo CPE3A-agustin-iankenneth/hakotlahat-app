@@ -5,6 +5,7 @@ import { AdminFleetContent } from "@/components/admin/admin-fleet-content";
 import type { MunVehicle, DriverWithSession } from "@/types/municipality";
 
 export default async function AdminFleetPage() {
+  await connection();
   const supabase = await createClient();
 
   const {

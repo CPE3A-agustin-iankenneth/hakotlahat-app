@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -15,6 +16,7 @@ interface LeaderboardEntry {
 }
 
 export default async function DriverPointsPage() {
+  await connection();
   const supabase = await createClient();
 
   // Get current user

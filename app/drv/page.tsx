@@ -1,9 +1,11 @@
+import { connection } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { DriverMapClient } from '@/components/drv/driver-map-client';
 import type { PickupRequest, DriverSession, ActiveRoute } from '@/components/drv/driver-map-client';
 
 export default async function RoutePage() {
+  await connection();
   const supabase = await createClient();
   const {
     data: { user },

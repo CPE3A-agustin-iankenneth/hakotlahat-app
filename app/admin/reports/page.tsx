@@ -5,6 +5,7 @@ import { BarChart3 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export default async function MunReportsPage() {
+  await connection();
   const supabase = await createClient();
 
   const {

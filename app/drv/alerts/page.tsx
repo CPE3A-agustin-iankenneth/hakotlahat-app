@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import * as React from "react";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
@@ -124,6 +125,7 @@ export type WeatherSnapshot = {
 };
 
 export default async function AlertsPage() {
+  await connection();
   const supabase = await createClient();
   const {
     data: { user },

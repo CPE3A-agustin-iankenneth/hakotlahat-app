@@ -1,8 +1,10 @@
+import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { RequestsContent } from "@/components/request-content";
 
 export default async function RequestPage() {
+  await connection();
   const supabase = await createClient();
 
   // Get current user (resident)

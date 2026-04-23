@@ -5,6 +5,7 @@ import { AdminRequestsContent } from "@/components/admin/admin-requests-content"
 import type { MunPickupRequest } from "@/types/municipality";
 
 export default async function AdminRequestsPage() {
+  await connection();
   const supabase = await createClient();
 
   const {

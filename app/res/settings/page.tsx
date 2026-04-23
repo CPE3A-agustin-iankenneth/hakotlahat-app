@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Bell, LogOut } from "lucide-react";
@@ -7,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import PickupAddressCard from "@/components/pickup-address-card";
 
 export default async function SettingsPage() {
+  await connection();
   const supabase = await createClient();
   const {
     data: { user },
