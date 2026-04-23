@@ -90,7 +90,7 @@ export function ReportsContent({ userId }: ReportsContentProps) {
 
   const streakProgress = Math.min(
     Math.round((cleanStreakWeeks / STREAK_TARGET_WEEKS) * 100),
-    100
+    100,
   );
 
   useEffect(() => {
@@ -100,7 +100,7 @@ export function ReportsContent({ userId }: ReportsContentProps) {
       try {
         const { data, error } = await supabase
           .from("pickup_requests")
-          .select("user_id,category,created_at");
+          .select("id,category,created_at");
 
         if (error) {
           console.error(
@@ -108,7 +108,7 @@ export function ReportsContent({ userId }: ReportsContentProps) {
             error.message,
             error.details,
             error.hint,
-            error.code
+            error.code,
           );
           return;
         }
@@ -116,13 +116,13 @@ export function ReportsContent({ userId }: ReportsContentProps) {
         const allRequests = data ?? [];
 
         const myRequests = userId
-          ? allRequests.filter((r) => r.user_id === userId)
+          ? allRequests.filter((r) => r.id === userId)
           : allRequests;
 
         // ── Community rank ────────────────────────────────────────────────
         const countPerUser = new Map<string, number>();
         for (const row of allRequests) {
-          const uid = row.user_id ?? "__unknown__";
+          const uid = row.id ?? "__unknown__";
           countPerUser.set(uid, (countPerUser.get(uid) ?? 0) + 1);
         }
         const myCount = userId ? (countPerUser.get(userId) ?? 0) : 0;
@@ -225,7 +225,7 @@ export function ReportsContent({ userId }: ReportsContentProps) {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "pickup_requests" },
-        () => fetchData()
+        () => fetchData(),
       )
       .subscribe();
 
@@ -266,13 +266,17 @@ export function ReportsContent({ userId }: ReportsContentProps) {
                 Impact overview
               </p>
               <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">Total Waste Diverted</p>
+                <p className="text-sm text-muted-foreground">
+                  Total Waste Diverted
+                </p>
                 <div className="flex flex-wrap items-end gap-6">
                   <div className="flex items-end gap-3">
                     <p className="text-7xl font-bold tracking-tight text-foreground">
                       {totalWasteKg}
                     </p>
-                    <span className="text-3xl font-semibold text-muted-foreground">kg</span>
+                    <span className="text-3xl font-semibold text-muted-foreground">
+                      kg
+                    </span>
                   </div>
                   <div className="rounded-full bg-primary/20 px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm">
                     <p className="text-xs text-primary">Community Rank</p>
@@ -284,7 +288,9 @@ export function ReportsContent({ userId }: ReportsContentProps) {
                     ) : (
                       <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1">
                         <span className="inline-flex h-2.5 w-2.5 rounded-full bg-muted-foreground" />
-                        <span className="text-muted-foreground text-xs">Not ranked yet</span>
+                        <span className="text-muted-foreground text-xs">
+                          Not ranked yet
+                        </span>
                       </div>
                     )}
                   </div>
@@ -305,7 +311,8 @@ export function ReportsContent({ userId }: ReportsContentProps) {
                 <div>
                   <p className="text-m text-muted-foreground">Clean Streak</p>
                   <p className="text-3xl font-bold text-foreground">
-                    {cleanStreakWeeks} {cleanStreakWeeks === 1 ? "Week" : "Weeks"}
+                    {cleanStreakWeeks}{" "}
+                    {cleanStreakWeeks === 1 ? "Week" : "Weeks"}
                   </p>
                 </div>
               </div>
@@ -328,7 +335,9 @@ export function ReportsContent({ userId }: ReportsContentProps) {
                   <p className="text-sm font-semibold uppercase tracking-[0.10em] text-muted-foreground">
                     Latest badge
                   </p>
-                  <p className="text-2xl font-semibold text-foreground">Zero waste</p>
+                  <p className="text-2xl font-semibold text-foreground">
+                    Zero waste
+                  </p>
                 </div>
               </div>
             </div>
@@ -340,7 +349,9 @@ export function ReportsContent({ userId }: ReportsContentProps) {
           <CardContent className="space-y-6 h-full">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-2xl font-bold text-foreground">Monthly Collection</p>
+                <p className="text-2xl font-bold text-foreground">
+                  Monthly Collection
+                </p>
               </div>
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <div className="inline-flex items-center gap-2">
@@ -370,7 +381,10 @@ export function ReportsContent({ userId }: ReportsContentProps) {
             </div>
             <div className="space-y-3">
               {compositionData.map((item) => (
-                <div key={item.name} className="flex items-center justify-between text-sm">
+                <div
+                  key={item.name}
+                  className="flex items-center justify-between text-sm"
+                >
                   <div className="flex items-center gap-2">
                     <span
                       className="inline-flex h-2.5 w-2.5 rounded-full"
@@ -378,7 +392,9 @@ export function ReportsContent({ userId }: ReportsContentProps) {
                     />
                     {item.name}
                   </div>
-                  <span className="font-semibold text-foreground">{item.value}%</span>
+                  <span className="font-semibold text-foreground">
+                    {item.value}%
+                  </span>
                 </div>
               ))}
             </div>
@@ -396,9 +412,10 @@ export function ReportsContent({ userId }: ReportsContentProps) {
             <div>
               <p className="font-bold text-foreground text-2xl">Civic Impact</p>
               <p className="mt-2 text-sm text-muted-foreground">
-                Your consistent recycling efforts this quarter have saved approximately 15
-                trees and reduced landfill mass by 0.8 cubic meters. You are actively
-                helping our city reach its 2030 zero-waste sustainability goals.
+                Your consistent recycling efforts this quarter have saved
+                approximately 15 trees and reduced landfill mass by 0.8 cubic
+                meters. You are actively helping our city reach its 2030
+                zero-waste sustainability goals.
               </p>
             </div>
           </div>
