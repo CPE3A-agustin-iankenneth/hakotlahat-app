@@ -23,6 +23,7 @@ export default function Home() {
       <Stats />
       <Features />
       <HowItWorks />
+      <AboutUs />
       <Roles />
       <CTA />
       <Footer />
@@ -46,6 +47,7 @@ function Nav() {
         <nav className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
           <a href="#features" className="hover:text-foreground transition-colors">Features</a>
           <a href="#how-it-works" className="hover:text-foreground transition-colors">How It Works</a>
+          <a href="#about" className="hover:text-foreground transition-colors">About Us</a>
           <a href="#roles" className="hover:text-foreground transition-colors">For You</a>
         </nav>
 
@@ -394,6 +396,85 @@ function Roles() {
               </Link>
             </div>
           ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function AboutUs() {
+  return (
+    <section id="about" className="py-24 px-6 overflow-hidden">
+      <div className="max-w-6xl mx-auto">
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
+          <div className="relative">
+            <div className="absolute -top-4 -left-4 w-24 h-24 bg-primary/10 rounded-full blur-2xl" />
+            <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-primary/10 rounded-full blur-2xl" />
+            <div className="grid grid-cols-6 gap-4">
+              {/* Row 1: 3 images */}
+              <div className="col-span-2 aspect-square rounded-2xl overflow-hidden border border-border shadow-md">
+                <img src="/images/emman.png" alt="Emman" className="w-full h-full object-cover" />
+              </div>
+              <div className="col-span-2 aspect-square rounded-2xl overflow-hidden border border-border shadow-md">
+                <img src="/images/gils.jpg" alt="Gils" className="w-full h-full object-cover" />
+              </div>
+              <div className="col-span-2 aspect-square rounded-2xl overflow-hidden border border-border shadow-md">
+                <img src="/images/nino.jpg" alt="Nino" className="w-full h-full object-cover" />
+              </div>
+              {/* Row 2: 2 images centered */}
+              <div className="col-start-2 col-span-2 aspect-square rounded-2xl overflow-hidden border border-border shadow-md">
+                <img src="/images/ian.png" alt="Ian" className="w-full h-full object-cover" />
+              </div>
+              <div className="col-span-2 aspect-square rounded-2xl overflow-hidden border border-border shadow-md">
+                <img src="/images/lorr.jpg" alt="Lorr" className="w-full h-full object-cover" />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-8">
+            <div>
+              <div className="inline-flex items-center gap-2 bg-primary/10 text-primary text-xs font-semibold px-3 py-1.5 rounded-full mb-4">
+                Our Mission
+              </div>
+              <h2 className="text-4xl font-bold text-foreground leading-tight mb-6">
+                Redefining Waste Collection for the Modern Era
+              </h2>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                At HakotLahat, we believe that clean communities are the foundation of a sustainable future. Our team combines expertise in environmental science, software engineering, and urban planning to solve one of the most pressing challenges in Philippine municipalities.
+              </p>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <h4 className="font-bold text-foreground">Our Vision</h4>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  To be the leading platform for intelligent waste management, empowering every barangay with technology that saves time and resources.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-bold text-foreground">Our Core Values</h4>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Transparency, efficiency, and community-driven innovation are at the heart of everything we build.
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-4 flex items-center gap-6">
+              <div className="flex -space-x-3">
+                {[1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className="w-10 h-10 rounded-full border-2 border-background bg-muted flex items-center justify-center overflow-hidden"
+                  >
+                    <Users className="w-5 h-5 text-muted-foreground/50" />
+                  </div>
+                ))}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                <span className="text-foreground font-bold font-sans">10+</span> Experts dedicated to your city's health.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </section>
