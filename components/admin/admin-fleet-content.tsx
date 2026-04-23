@@ -59,7 +59,7 @@ function vehicleStatusBadge(status: VehicleStatus) {
   return <Badge variant="secondary">Retired</Badge>;
 }
 
-export function MunFleetContent({ drivers, vehicles }: Props) {
+export function AdminFleetContent({ drivers, vehicles }: Props) {
   const [vehicleList, setVehicleList] = useState(vehicles);
   const supabase = createClient();
 

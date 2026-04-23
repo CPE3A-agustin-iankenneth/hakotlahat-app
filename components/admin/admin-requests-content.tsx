@@ -29,7 +29,7 @@ function priorityLabel(score: number): string {
 
 type TabValue = "all" | RequestStatus;
 
-export function MunRequestsContent({ requests }: Props) {
+export function AdminRequestsContent({ requests }: Props) {
   const [localRequests, setLocalRequests] = useState(requests);
   const [activeTab, setActiveTab] = useState<TabValue>("pending");
   const [isUpdating, setIsUpdating] = useState<string | null>(null);

@@ -1,10 +1,10 @@
-import { MunicipalitySidebar } from "@/components/nav/municipality-sidebar";
+import { AdminSidebar } from "@/components/nav/admin-sidebar";
 import {
-  MunicipalityBottomNav,
-  MunicipalityMobileHeader,
-} from "@/components/nav/municipality-mobile-nav";
+  AdminBottomNav,
+  AdminMobileHeader,
+} from "@/components/nav/admin-mobile-nav";
 
-export default function MunicipalityLayout({
+export default function AdminLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -13,14 +13,14 @@ export default function MunicipalityLayout({
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Desktop: Sidebar — hidden on mobile */}
       <div className="hidden md:flex">
-        <MunicipalitySidebar />
+        <AdminSidebar />
       </div>
 
       {/* Main content area */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Mobile: sticky header — hidden on desktop */}
         <div className="md:hidden">
-          <MunicipalityMobileHeader />
+          <AdminMobileHeader />
         </div>
 
         {/* Scrollable page content */}
@@ -31,7 +31,7 @@ export default function MunicipalityLayout({
 
         {/* Mobile: fixed bottom nav — hidden on desktop */}
         <div className="md:hidden">
-          <MunicipalityBottomNav />
+          <AdminBottomNav />
         </div>
       </div>
     </div>
