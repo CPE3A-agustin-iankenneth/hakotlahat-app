@@ -1,9 +1,10 @@
+import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { MunFleetContent } from "@/components/mun/mun-fleet-content";
+import { AdminFleetContent } from "@/components/admin/admin-fleet-content";
 import type { MunVehicle, DriverWithSession } from "@/types/municipality";
 
-export default async function MunFleetPage() {
+export default async function AdminFleetPage() {
   const supabase = await createClient();
 
   const {
@@ -55,7 +56,7 @@ export default async function MunFleetPage() {
   }));
 
   return (
-    <MunFleetContent
+    <AdminFleetContent
       drivers={driversWithSessions}
       vehicles={(vehicles as unknown as MunVehicle[]) ?? []}
     />

@@ -1,9 +1,10 @@
+import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { MunRequestsContent } from "@/components/mun/mun-requests-content";
+import { AdminRequestsContent } from "@/components/admin/admin-requests-content";
 import type { MunPickupRequest } from "@/types/municipality";
 
-export default async function MunRequestsPage() {
+export default async function AdminRequestsPage() {
   const supabase = await createClient();
 
   const {
@@ -28,7 +29,7 @@ export default async function MunRequestsPage() {
     .order("created_at", { ascending: false });
 
   return (
-    <MunRequestsContent
+    <AdminRequestsContent
       requests={(allRequests as unknown as MunPickupRequest[]) ?? []}
     />
   );

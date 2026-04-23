@@ -15,14 +15,14 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 const navItems = [
-  { href: "/mun", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/mun/fleet", label: "Fleet", icon: Truck },
-  { href: "/mun/requests", label: "Requests", icon: ClipboardList },
-  { href: "/mun/routes", label: "Routes", icon: Route },
-  { href: "/mun/reports", label: "Reports", icon: BarChart3 },
+  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/fleet", label: "Fleet", icon: Truck },
+  { href: "/admin/requests", label: "Requests", icon: ClipboardList },
+  { href: "/admin/routes", label: "Routes", icon: Route },
+  { href: "/admin/reports", label: "Reports", icon: BarChart3 },
 ];
 
-export function MunicipalitySidebar() {
+export function AdminSidebar() {
   const pathname = usePathname();
 
   return (
@@ -41,8 +41,8 @@ export function MunicipalitySidebar() {
       <nav className="flex flex-1 flex-col gap-1 pr-4">
         {navItems.map(({ href, label, icon: Icon }) => {
           const isActive =
-            href === "/mun"
-              ? pathname === "/mun"
+            href === "/admin"
+              ? pathname === "/admin"
               : pathname === href || pathname.startsWith(href + "/");
           return (
             <Link

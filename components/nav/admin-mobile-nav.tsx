@@ -15,14 +15,14 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 const navItems = [
-  { href: "/mun", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/mun/fleet", label: "Fleet", icon: Truck },
-  { href: "/mun/requests", label: "Requests", icon: ClipboardList },
-  { href: "/mun/routes", label: "Routes", icon: Route },
-  { href: "/mun/reports", label: "Reports", icon: BarChart3 },
+  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/fleet", label: "Fleet", icon: Truck },
+  { href: "/admin/requests", label: "Requests", icon: ClipboardList },
+  { href: "/admin/routes", label: "Routes", icon: Route },
+  { href: "/admin/reports", label: "Reports", icon: BarChart3 },
 ];
 
-export function MunicipalityMobileHeader() {
+export function AdminMobileHeader() {
   return (
     <header className="sticky top-0 z-50 flex items-center justify-between border-b border-border bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex items-center gap-2">
@@ -42,15 +42,15 @@ export function MunicipalityMobileHeader() {
   );
 }
 
-export function MunicipalityBottomNav() {
+export function AdminBottomNav() {
   const pathname = usePathname();
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around rounded-t-3xl border-t border-border/15 bg-white px-2 pb-6 pt-3 shadow-[0px_-4px_20px_0px_rgba(26,28,28,0.06)]">
       {navItems.map(({ href, label, icon: Icon }) => {
         const isActive =
-          href === "/mun"
-            ? pathname === "/mun"
+          href === "/admin"
+            ? pathname === "/admin"
             : pathname === href || pathname.startsWith(href + "/");
         return (
           <Link

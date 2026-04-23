@@ -63,7 +63,7 @@ function priorityBadge(score: number) {
   return <Badge variant="secondary">Score {score}</Badge>;
 }
 
-export function MunDashboardContent({ stats, activeSessions, pendingRequests }: Props) {
+export function AdminDashboardContent({ stats, activeSessions, pendingRequests }: Props) {
   const [localRequests, setLocalRequests] = useState(pendingRequests);
   const supabase = createClient();
 
@@ -145,7 +145,7 @@ export function MunDashboardContent({ stats, activeSessions, pendingRequests }: 
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-xl font-bold">Live Fleet</h2>
             <Link
-              href="/mun/fleet"
+              href="/admin/fleet"
               className="text-sm font-semibold text-primary hover:underline"
             >
               View Full Fleet →
@@ -205,7 +205,7 @@ export function MunDashboardContent({ stats, activeSessions, pendingRequests }: 
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-xl font-bold">Pending Requests</h2>
             <Link
-              href="/mun/requests"
+              href="/admin/requests"
               className="text-sm font-semibold text-primary hover:underline"
             >
               View All Requests →

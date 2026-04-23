@@ -1,9 +1,10 @@
+import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { MunRoutesContent } from "@/components/mun/mun-routes-content";
+import { AdminRoutesContent } from "@/components/admin/admin-routes-content";
 import type { MunRoute } from "@/types/municipality";
 
-export default async function MunRoutesPage() {
+export default async function AdminRoutesPage() {
   const supabase = await createClient();
 
   const {
@@ -39,7 +40,7 @@ export default async function MunRoutesPage() {
   ]);
 
   return (
-    <MunRoutesContent
+    <AdminRoutesContent
       activeRoutes={(activeRoutes as unknown as MunRoute[]) ?? []}
       completedRoutes={(completedRoutes as unknown as MunRoute[]) ?? []}
     />

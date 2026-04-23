@@ -31,7 +31,7 @@ function formatDate(dateStr: string) {
   });
 }
 
-export function MunRoutesContent({ activeRoutes, completedRoutes }: Props) {
+export function AdminRoutesContent({ activeRoutes, completedRoutes }: Props) {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="mx-auto max-w-7xl px-6 py-8 space-y-10">
@@ -106,7 +106,7 @@ export function MunRoutesContent({ activeRoutes, completedRoutes }: Props) {
                     </div>
                   </div>
                   <div className="mt-4">
-                    <Link href="/mun/fleet">
+                    <Link href="/admin/fleet">
                       <Button variant="outline" size="sm" className="w-full rounded-full">
                         View in Fleet
                       </Button>

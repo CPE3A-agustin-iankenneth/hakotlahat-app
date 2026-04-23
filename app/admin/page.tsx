@@ -1,9 +1,10 @@
+import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { MunDashboardContent } from "@/components/mun/mun-dashboard-content";
+import { AdminDashboardContent } from "@/components/admin/admin-dashboard-content";
 import type { MunDriverSession, MunPickupRequest, MunDashboardStats } from "@/types/municipality";
 
-export default async function MunDashboardPage() {
+export default async function AdminDashboardPage() {
   const supabase = await createClient();
 
   const {
@@ -71,7 +72,7 @@ export default async function MunDashboardPage() {
   };
 
   return (
-    <MunDashboardContent
+    <AdminDashboardContent
       stats={stats}
       activeSessions={(activeSessions as unknown as MunDriverSession[]) ?? []}
       pendingRequests={(pendingRequests as unknown as MunPickupRequest[]) ?? []}
