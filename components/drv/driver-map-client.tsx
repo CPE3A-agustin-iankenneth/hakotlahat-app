@@ -117,9 +117,11 @@ export function DriverMapClient({
 
   // Route optimization state
   const [isOptimizing, setIsOptimizing] = useState(false);
-  const [currentRoute, setCurrentRoute] = useState<ActiveRoute>(activeRoute);
+  const [currentRoute, setCurrentRoute] = useState<ActiveRoute>(
+    pickupRequests.length > 0 ? activeRoute : null
+  );
   const [routeStops, setRouteStops] = useState<RouteStop[]>(
-    activeRoute?.optimized_path?.stops ?? []
+    pickupRequests.length > 0 ? (activeRoute?.optimized_path?.stops ?? []) : []
   );
   const [collectedIds, setCollectedIds] = useState<string[]>([]);
   const [isCollecting, setIsCollecting] = useState(false);
@@ -553,12 +555,16 @@ export function DriverMapClient({
             </div>
           </div>
           <div className="flex gap-3 text-xs text-muted-foreground">
-            {routeStops.length > 0 && (
+            {routeStops.length > 0 ? (
               <span className="flex items-center gap-1 text-primary font-medium">
                 <Route className="w-3 h-3" />
                 {collectedIds.length}/{routeStops.length} collected
               </span>
-            )}
+            ) : visibleRequests.length === 0 ? (
+              <span className="flex items-center gap-1 text-muted-foreground italic">
+                No current requests
+              </span>
+            ) : null}
             <span className="flex items-center gap-1">
               <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" />
               Pending
