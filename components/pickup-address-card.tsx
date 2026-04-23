@@ -1,5 +1,4 @@
 "use client";
-
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import {
   Map,
@@ -11,6 +10,13 @@ import {
 import type { MapViewport } from "@/components/ui/map";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { MapPin, Search, X } from "lucide-react";
 import { updatePickupLocation } from "@/app/res/settings/actions";
@@ -45,18 +51,22 @@ export default function PickupAddressCard({
     lng: initialLng,
     address: initialAddress ?? "",
   });
-  const [viewport, setViewport] = useState<MapViewport>(DEFAULT_VIEWPORT);
+  const [previewViewport, setPreviewViewport] =
+    useState<MapViewport>(DEFAULT_VIEWPORT);
+  const [editViewport, setEditViewport] =
+    useState<MapViewport>(DEFAULT_VIEWPORT);
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<GeoFeature[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  const isEditing = isModalOpen;
   const activeLocation = isEditing ? draftLocation : savedLocation;
   const hasChanges =
     draftLocation.lat !== savedLocation.lat ||
@@ -65,7 +75,12 @@ export default function PickupAddressCard({
 
   useEffect(() => {
     if (savedLocation.lat === null || savedLocation.lng === null) return;
-    setViewport((v) => ({
+    setPreviewViewport((v) => ({
+      ...v,
+      center: [savedLocation.lng, savedLocation.lat],
+      zoom: 15,
+    }));
+    setEditViewport((v) => ({
       ...v,
       center: [savedLocation.lng, savedLocation.lat],
       zoom: 15,
@@ -139,7 +154,7 @@ export default function PickupAddressCard({
       lng: feature.lng,
       address: feature.label,
     });
-    setViewport((v) => ({
+    setEditViewport((v) => ({
       ...v,
       center: [feature.lng, feature.lat],
       zoom: 15,
@@ -155,20 +170,24 @@ export default function PickupAddressCard({
   const handleStartEditing = () => {
     setError(null);
     setDraftLocation(savedLocation);
-    setIsEditing(true);
     setQuery(savedLocation.address);
+    setSuggestions([]);
+    setShowDropdown(false);
     if (savedLocation.lat !== null && savedLocation.lng !== null) {
-      setViewport((v) => ({
+      setEditViewport((v) => ({
         ...v,
         center: [savedLocation.lng, savedLocation.lat],
         zoom: 15,
       }));
+    } else {
+      setEditViewport(DEFAULT_VIEWPORT);
     }
+    setIsModalOpen(true);
     requestAnimationFrame(() => searchInputRef.current?.focus());
   };
 
   const handleCancelEditing = () => {
-    setIsEditing(false);
+    setIsModalOpen(false);
     setError(null);
     setQuery("");
     setSuggestions([]);
@@ -186,7 +205,7 @@ export default function PickupAddressCard({
           home_address: draftLocation.address ? draftLocation.address : null,
         });
         setSavedLocation(draftLocation);
-        setIsEditing(false);
+        setIsModalOpen(false);
         setQuery("");
         setSuggestions([]);
         setShowDropdown(false);
@@ -206,10 +225,10 @@ export default function PickupAddressCard({
         <Button
           variant="link"
           className="text-sm text-primary hover:text-primary font-medium p-0 h-auto"
-          onClick={isEditing ? handleCancelEditing : handleStartEditing}
+          onClick={handleStartEditing}
           disabled={isPending}
         >
-          {isEditing ? "Cancel" : "Pin New Location"}
+          Pin New Location
         </Button>
       </div>
       <div className="mb-4">
@@ -221,100 +240,33 @@ export default function PickupAddressCard({
         </p>
       </div>
 
-      <div className="relative rounded-2xl overflow-hidden bg-card border border-border shadow-xs">
-        {isEditing && (
-          <div ref={searchRef} className="absolute top-3 left-3 right-3 z-10">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
-              <Input
-                ref={searchInputRef}
-                placeholder="Search your address..."
-                value={query}
-                onChange={handleSearchChange}
-                onFocus={() => suggestions.length > 0 && setShowDropdown(true)}
-                className="pl-9 pr-9 h-11 rounded-2xl bg-background/95 backdrop-blur border-0 shadow-md text-sm"
-              />
-              {query && (
-                <button
-                  type="button"
-                  onClick={handleClearSearch}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {isSearching ? (
-                    <span className="size-4 block rounded-full border-2 border-muted-foreground border-t-transparent animate-spin" />
-                  ) : (
-                    <X className="size-4" />
-                  )}
-                </button>
-              )}
-            </div>
-
-            {showDropdown && (
-              <ul className="mt-1 bg-background rounded-2xl shadow-lg border border-border overflow-hidden">
-                {suggestions.map((s, i) => (
-                  <li key={i}>
-                    <button
-                      type="button"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => handleSuggestionSelect(s)}
-                      className="w-full text-left px-4 py-3 text-sm hover:bg-muted flex items-start gap-2.5 transition-colors"
-                    >
-                      <MapPin className="size-4 text-primary shrink-0 mt-0.5" />
-                      <span className="line-clamp-2 text-foreground">
-                        {s.label}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
-
+      <div className=" overflow-hidden rounded-3xl border border-border bg-muted/30 shadow-sm">
         <Map
           theme="light"
-          viewport={viewport}
-          onViewportChange={setViewport}
-          className="h-[52vmax] max-h-[380px] min-h-[240px] w-full"
+          viewport={previewViewport}
+          onViewportChange={setPreviewViewport}
+          className="h-[300px] w-full"
         >
-          {isEditing && <MapClickHandler onMapClick={handlePinDrop} />}
-          {activeLocation.lat !== null && activeLocation.lng !== null && (
+          {savedLocation.lat !== null && savedLocation.lng !== null && (
             <MapMarker
-              longitude={activeLocation.lng}
-              latitude={activeLocation.lat}
-              draggable={isEditing}
-              onDragEnd={({ lng, lat }) => handlePinDrop(lng, lat)}
+              longitude={savedLocation.lng}
+              latitude={savedLocation.lat}
             >
               <MarkerContent>
                 <MapPin className="size-9 text-primary drop-shadow-md -mb-1" />
               </MarkerContent>
             </MapMarker>
           )}
-          {isEditing && (
-            <MapControls
-              showZoom
-              showLocate
-              position="bottom-right"
-              onLocate={({ longitude, latitude }) => {
-                handlePinDrop(longitude, latitude);
-                setViewport((v) => ({
-                  ...v,
-                  center: [longitude, latitude],
-                  zoom: 15,
-                }));
-              }}
-            />
-          )}
         </Map>
       </div>
 
       <div className="mt-3 flex items-start gap-2 px-1 min-h-[1.25rem]">
-        {activeLocation.lat !== null ? (
+        {savedLocation.lat !== null && savedLocation.lng !== null ? (
           <>
             <div className="size-2 rounded-full bg-primary shrink-0 mt-1.5" />
             <p className="text-sm text-foreground line-clamp-2">
-              {activeLocation.address ||
-                `${activeLocation.lat.toFixed(5)}, ${activeLocation.lng!.toFixed(5)}`}
+              {savedLocation.address ||
+                `${savedLocation.lat.toFixed(5)}, ${savedLocation.lng.toFixed(5)}`}
             </p>
           </>
         ) : (
@@ -327,24 +279,158 @@ export default function PickupAddressCard({
         )}
       </div>
 
-      {isEditing && (
-        <div className="mt-4 flex items-center gap-3">
-          <Button
-            className="rounded-full px-6"
-            onClick={handleSave}
-            disabled={
-              isPending ||
-              !hasChanges ||
-              draftLocation.lat === null ||
-              draftLocation.lng === null
-            }
-          >
-            {isPending ? "Saving location..." : "Save Location"}
-          </Button>
-        </div>
-      )}
+      <Dialog
+        open={isModalOpen}
+        onOpenChange={(open) => {
+          if (!open) handleCancelEditing();
+        }}
+      >
+        <DialogContent className="sm:max-w-[960px] p-0 overflow-hidden">
+          <div className="px-6 pt-6 pb-4 border-b">
+            <DialogHeader className="text-left">
+              <DialogTitle>Pin New Location</DialogTitle>
+              <DialogDescription>
+                Search for your address or drop a pin on the map.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+          <div className="px-6 py-5 space-y-4">
+            <div className="relative rounded-2xl overflow-hidden bg-card border border-border shadow-xs">
+              {isEditing && (
+                <div
+                  ref={searchRef}
+                  className="absolute top-3 left-3 right-3 z-10"
+                >
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
+                    <Input
+                      ref={searchInputRef}
+                      placeholder="Search your address..."
+                      value={query}
+                      onChange={handleSearchChange}
+                      onFocus={() =>
+                        suggestions.length > 0 && setShowDropdown(true)
+                      }
+                      className="pl-9 pr-9 h-11 rounded-2xl bg-background/95 backdrop-blur border-0 shadow-md text-sm"
+                    />
+                    {query && (
+                      <button
+                        type="button"
+                        onClick={handleClearSearch}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {isSearching ? (
+                          <span className="size-4 block rounded-full border-2 border-muted-foreground border-t-transparent animate-spin" />
+                        ) : (
+                          <X className="size-4" />
+                        )}
+                      </button>
+                    )}
+                  </div>
 
-      {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
+                  {showDropdown && (
+                    <ul className="mt-1 bg-background rounded-2xl shadow-lg border border-border overflow-hidden">
+                      {suggestions.map((s, i) => (
+                        <li key={i}>
+                          <button
+                            type="button"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => handleSuggestionSelect(s)}
+                            className="w-full text-left px-4 py-3 text-sm hover:bg-muted flex items-start gap-2.5 transition-colors"
+                          >
+                            <MapPin className="size-4 text-primary shrink-0 mt-0.5" />
+                            <span className="line-clamp-2 text-foreground">
+                              {s.label}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+
+              <Map
+                theme="light"
+                viewport={editViewport}
+                onViewportChange={setEditViewport}
+                className="h-[52vmax] max-h-[380px] min-h-[240px] w-full"
+              >
+                {isEditing && <MapClickHandler onMapClick={handlePinDrop} />}
+                {activeLocation.lat !== null && activeLocation.lng !== null && (
+                  <MapMarker
+                    longitude={activeLocation.lng}
+                    latitude={activeLocation.lat}
+                    draggable={isEditing}
+                    onDragEnd={({ lng, lat }) => handlePinDrop(lng, lat)}
+                  >
+                    <MarkerContent>
+                      <MapPin className="size-9 text-primary drop-shadow-md -mb-1" />
+                    </MarkerContent>
+                  </MapMarker>
+                )}
+                {isEditing && (
+                  <MapControls
+                    showZoom
+                    showLocate
+                    position="bottom-right"
+                    onLocate={({ longitude, latitude }) => {
+                      handlePinDrop(longitude, latitude);
+                      setEditViewport((v) => ({
+                        ...v,
+                        center: [longitude, latitude],
+                        zoom: 15,
+                      }));
+                    }}
+                  />
+                )}
+              </Map>
+            </div>
+
+            <div className="flex items-start gap-2 px-1 min-h-[1.25rem]">
+              {activeLocation.lat !== null ? (
+                <>
+                  <div className="size-2 rounded-full bg-primary shrink-0 mt-1.5" />
+                  <p className="text-sm text-foreground line-clamp-2">
+                    {activeLocation.address ||
+                      `${activeLocation.lat.toFixed(5)}, ${activeLocation.lng!.toFixed(5)}`}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="size-2 rounded-full bg-muted-foreground/40 shrink-0 mt-1.5" />
+                  <p className="text-sm text-muted-foreground">
+                    No location selected yet.
+                  </p>
+                </>
+              )}
+            </div>
+
+            {error && <p className="text-sm text-destructive">{error}</p>}
+          </div>
+          <div className="px-6 pb-6 pt-0 flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <Button
+              variant="ghost"
+              onClick={handleCancelEditing}
+              disabled={isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="rounded-full px-6"
+              onClick={handleSave}
+              disabled={
+                isPending ||
+                !hasChanges ||
+                draftLocation.lat === null ||
+                draftLocation.lng === null
+              }
+            >
+              {isPending ? "Saving location..." : "Save Location"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
