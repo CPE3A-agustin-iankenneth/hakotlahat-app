@@ -42,6 +42,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { PickupRequestModal } from "@/components/pickup-request-modal";
 
 // ── Types (ready for DB integration) ──────────────────────────
 interface UserProfile {
@@ -125,24 +126,14 @@ const Index = () => {
   const [activityOpen, setActivityOpen] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState<ActivityItem | null>(null);
 
-  // Pickup form state
-  const [pickupCategory, setPickupCategory] = useState("");
-  const [pickupDate, setPickupDate] = useState("");
-  const [pickupNotes, setPickupNotes] = useState("");
-
   const unreadCount = notifications.filter((n) => n.unread).length;
 
-  const handlePickupSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!pickupCategory || !pickupDate) {
-      toast.error("Missing info — please select a category and date.");
-      return;
-    }
+  const handlePickupSubmit = (data: { category: string; date: string; notes: string }) => {
     const newItem: ActivityItem = {
       id: Date.now().toString(),
-      category: pickupCategory,
+      category: data.category,
       type: "Scheduled Pickup",
-      date: pickupDate,
+      date: data.date,
       points: 0,
       status: "Pending",
     };
@@ -150,10 +141,6 @@ const Index = () => {
     setSteps((prev) =>
       prev.map((s, i) => (i === 0 ? { ...s, detail: `New request submitted at ${new Date().toLocaleTimeString()}`, completed: true } : s))
     );
-    setPickupCategory("");
-    setPickupDate("");
-    setPickupNotes("");
-    setPickupOpen(false);
     toast.success(`Pickup requested — ${newItem.category} scheduled for ${newItem.date}.`);
   };
 
@@ -381,57 +368,12 @@ const Index = () => {
         </motion.div>
       </main>
 
-      {/* ── Pickup Request Dialog ── */}
-      <Dialog open={pickupOpen} onOpenChange={setPickupOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Request New Pickup</DialogTitle>
-            <DialogDescription>Tell us what you'd like collected and when.</DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handlePickupSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="category">Waste Category</Label>
-              <Select value={pickupCategory} onValueChange={setPickupCategory}>
-                <SelectTrigger id="category">
-                  <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Cardboard & Paper">Cardboard & Paper</SelectItem>
-                  <SelectItem value="Plastics">Plastics</SelectItem>
-                  <SelectItem value="Electronics">Electronics</SelectItem>
-                  <SelectItem value="Glass">Glass</SelectItem>
-                  <SelectItem value="Metal">Metal</SelectItem>
-                  <SelectItem value="Bulk Waste">Bulk Waste</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="date">Preferred Date</Label>
-              <Input
-                id="date"
-                type="date"
-                value={pickupDate}
-                onChange={(e) => setPickupDate(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes (optional)</Label>
-              <Textarea
-                id="notes"
-                placeholder="Access instructions, item details..."
-                value={pickupNotes}
-                onChange={(e) => setPickupNotes(e.target.value)}
-              />
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setPickupOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit">Submit Request</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      {/* ── Pickup Request Modal ── */}
+      <PickupRequestModal
+        isOpen={pickupOpen}
+        onOpenChange={setPickupOpen}
+        onSubmit={handlePickupSubmit}
+      />
 
       {/* ── AI Scan Dialog ── */}
       <Dialog open={scanOpen} onOpenChange={setScanOpen}>
