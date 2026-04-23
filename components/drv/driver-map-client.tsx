@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Package, AlertCircle, MapPin, Truck, Route, CheckCircle2, Loader2 } from 'lucide-react';
+import { Package, AlertCircle, MapPin, Truck, Route, CheckCircle2, Loader2, Map as MapIcon, ListOrdered } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { createClient } from '@/lib/supabase/client';
@@ -397,8 +398,10 @@ export function DriverMapClient({
 
   const visibleRequests = localRequests.filter(r => r.status !== 'collected');
 
+  const [mobileTab, setMobileTab] = useState<'map' | 'path'>('map');
+
   return (
-    <div className="flex h-screen bg-background text-foreground overflow-hidden">
+    <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden">
       {/* Session activation overlay — shown when no active session exists */}
       {!sessionId && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur">
@@ -451,8 +454,33 @@ export function DriverMapClient({
         </div>
       )}
 
+      {/* Mobile Tab Bar */}
+      <div className="md:hidden shrink-0 bg-card border-b border-border">
+        <Tabs value={mobileTab} onValueChange={(v) => setMobileTab(v as 'map' | 'path')} className="w-full">
+          <TabsList className="w-full rounded-none h-12 bg-card border-0 p-0 gap-0">
+            <TabsTrigger
+              value="map"
+              className="flex-1 h-full rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none gap-2"
+            >
+              <MapIcon className="w-4 h-4" />
+              Map
+            </TabsTrigger>
+            <TabsTrigger
+              value="path"
+              className="flex-1 h-full rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none gap-2"
+            >
+              <ListOrdered className="w-4 h-4" />
+              Path
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
+      {/* Desktop + Mobile: main content area */}
+      <div className="flex flex-1 overflow-hidden">
+
       {/* Map */}
-      <div className="flex-1 relative">
+      <div className={`flex-1 relative ${mobileTab === 'path' ? 'hidden md:flex' : 'flex'}`}>
         <Map center={initialCenter} zoom={initialZoom} className="w-full h-full">
           {/* Driver location — pulsing blue dot */}
           {driverLocation && (
@@ -600,7 +628,7 @@ export function DriverMapClient({
       </div>
 
       {/* Right Sidebar */}
-      <div className="w-96 bg-card border-l border-border overflow-y-auto flex flex-col">
+      <div className={`md:w-96 w-full bg-card border-l border-border overflow-y-auto flex flex-col ${mobileTab === 'map' ? 'hidden md:flex' : 'flex'}`}>
         {/* Header */}
         <div className="sticky top-0 bg-card/95 backdrop-blur border-b border-border p-6 z-20">
           {noPendingCollections ? (
@@ -919,6 +947,8 @@ export function DriverMapClient({
           )}
         </div>
       </div>
+
+      </div> {/* end main content area */}
     </div>
   );
 }
