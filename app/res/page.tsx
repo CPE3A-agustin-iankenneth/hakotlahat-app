@@ -23,6 +23,8 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { RequestPickupModal, RequestPickupData } from "@/components/pickup-request-modal";
+import { createClient } from "@/lib/supabase/client";
+import { uploadImage } from "@/lib/upload-image";
 
 interface CollectionStep {
   label: string;
@@ -64,12 +66,59 @@ const Index = () => {
   const [selectedActivity, setSelectedActivity] = useState<ActivityItem | null>(null);
   const [activityOpen, setActivityOpen] = useState(false);
 
-  const handlePickupSubmit = (data: RequestPickupData) => {
+  const handlePickupSubmit = async (data: RequestPickupData) => {
+    const supabase = createClient();
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      toast.error("You must be logged in to submit a request.");
+      return;
+    }
+
+    const { data: profile } = await supabase
+      .from("users")
+      .select("home_lat, home_lng")
+      .eq("id", user.id)
+      .single();
+
+    let imageUrl: string | null = null;
+    if (data.imageFile) {
+      try {
+        const ext = data.imageFile.name.split(".").pop() ?? "jpg";
+        imageUrl = await uploadImage(
+          data.imageFile,
+          "pickup-images",
+          `${user.id}/${Date.now()}.${ext}`
+        );
+      } catch (err) {
+        toast.error("Image upload failed — request will be submitted without photo.");
+        console.error("Image upload failed:", err);
+      }
+    }
+
+    const { error } = await supabase.from("pickup_requests").insert({
+      resident_id: user.id,
+      latitude: profile?.home_lat ?? 0,
+      longitude: profile?.home_lng ?? 0,
+      image_url: imageUrl,
+      status: "pending",
+      priority_score: data.priorityScore ?? 1,
+      volume_estimate: data.estimatedVolume ?? null,
+      category: data.category,
+      created_at: new Date().toISOString(),
+    });
+
+    if (error) {
+      toast.error(`Failed to submit request: ${error.message}`);
+      console.error("Failed to submit pickup request:", error);
+      return;
+    }
+
     const newItem: ActivityItem = {
       id: Date.now().toString(),
       category: data.category,
       type: "Scheduled Pickup",
-      date: data.date,
+      date: new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
       points: 0,
       status: "Pending",
     };
@@ -81,7 +130,7 @@ const Index = () => {
           : s
       )
     );
-    const extra = data.estimatedVolume ? ` (AI volume: ${data.estimatedVolume})` : "";
+    const extra = data.estimatedVolume ? ` (AI volume: ${data.estimatedVolume} m³)` : "";
     toast.success(`Pickup requested — ${newItem.category} on ${newItem.date}${extra}.`);
   };
 

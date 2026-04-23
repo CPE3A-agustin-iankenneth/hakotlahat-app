@@ -19,7 +19,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -34,10 +33,10 @@ import { toast } from "sonner";
 
 export interface RequestPickupData {
   category: string;
-  date: string;
   notes: string;
-  estimatedVolume?: string;
-  assignedVehicle?: string;
+  imageFile?: File;
+  estimatedVolume?: number;
+  priorityScore?: number;
 }
 
 interface RequestPickupModalProps {
@@ -46,7 +45,29 @@ interface RequestPickupModalProps {
   onSubmit: (data: RequestPickupData) => void;
 }
 
+interface AiScanResult {
+  category: string;
+  priority_score: number;
+  volume_estimate: number;
+}
+
+const WASTE_CATEGORIES = [
+  "Cardboard & Paper",
+  "Plastics",
+  "Electronics",
+  "Bulk Waste",
+  "Organic",
+  "Hazardous",
+  "Other",
+] as const;
+
 const STEPS = ["AI Estimate", "Details", "Confirm"];
+
+const priorityLabel = (score: number) => {
+  if (score >= 4) return "High Priority";
+  if (score >= 2) return "Medium Priority";
+  return "Low Priority";
+};
 
 export const RequestPickupModal = ({
   open,
@@ -55,25 +76,22 @@ export const RequestPickupModal = ({
 }: RequestPickupModalProps) => {
   const [step, setStep] = useState(0);
   const [category, setCategory] = useState("");
-  const [date, setDate] = useState("");
   const [notes, setNotes] = useState("");
   const [scanning, setScanning] = useState(false);
-  const [scanResult, setScanResult] = useState<{
-    volume: string;
-    vehicle: string;
-  } | null>(null);
+  const [scanResult, setScanResult] = useState<AiScanResult | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const reset = () => {
     setStep(0);
     setCategory("");
-    setDate("");
     setNotes("");
     setScanning(false);
     setScanResult(null);
     setImagePreview(null);
+    setImageFile(null);
     setDragActive(false);
   };
 
@@ -82,7 +100,7 @@ export const RequestPickupModal = ({
     onOpenChange(next);
   };
 
-  const handleFile = (file: File) => {
+  const handleFile = async (file: File) => {
     if (!file.type.startsWith("image/")) {
       toast.error("Please upload an image file (PNG or JPG).");
       return;
@@ -93,13 +111,27 @@ export const RequestPickupModal = ({
     }
     const url = URL.createObjectURL(file);
     setImagePreview(url);
+    setImageFile(file);
     setScanning(true);
     setScanResult(null);
-    setTimeout(() => {
-      setScanResult({ volume: "1.2 m³", vehicle: "Truck #08" });
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/analyze-waste", {
+        method: "POST",
+        body: formData,
+      });
+      if (!res.ok) throw new Error("Analysis failed");
+      const data: AiScanResult = await res.json();
+      setScanResult(data);
+      setCategory(data.category);
+      toast.success("AI scan complete — waste classified and volume estimated.");
+    } catch {
+      toast.error("AI scan failed. You can still fill in the details manually.");
+    } finally {
       setScanning(false);
-      toast.success("AI scan complete — volume estimated, vehicle assigned.");
-    }, 1400);
+    }
   };
 
   const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -112,24 +144,26 @@ export const RequestPickupModal = ({
   const clearImage = () => {
     if (imagePreview) URL.revokeObjectURL(imagePreview);
     setImagePreview(null);
+    setImageFile(null);
     setScanResult(null);
     setScanning(false);
+    setCategory("");
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleConfirm = () => {
     onSubmit({
       category,
-      date,
       notes,
-      estimatedVolume: scanResult?.volume,
-      assignedVehicle: scanResult?.vehicle,
+      imageFile: imageFile ?? undefined,
+      estimatedVolume: scanResult?.volume_estimate,
+      priorityScore: scanResult?.priority_score,
     });
     handleClose(false);
   };
 
   const canNext =
-    step === 0 || (step === 1 && category && date) || step === 2;
+    step === 0 || (step === 1 && category) || step === 2;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -145,15 +179,15 @@ export const RequestPickupModal = ({
               {STEPS[step] === "AI Estimate"
                 ? "Snap your waste"
                 : STEPS[step] === "Details"
-                ? "Pickup details"
-                : "Review & confirm"}
+                  ? "Pickup details"
+                  : "Review & confirm"}
             </DialogTitle>
             <DialogDescription className="text-primary-foreground/80">
               {STEPS[step] === "AI Estimate"
-                ? "Let AI estimate volume and assign the right vehicle."
+                ? "Let AI classify and estimate your waste."
                 : STEPS[step] === "Details"
-                ? "Tell us what and when."
-                : "Make sure everything looks right."}
+                  ? "Tell us what and when."
+                  : "Make sure everything looks right."}
             </DialogDescription>
           </DialogHeader>
 
@@ -162,9 +196,8 @@ export const RequestPickupModal = ({
             {STEPS.map((label, i) => (
               <div
                 key={label}
-                className={`h-1.5 flex-1 rounded-full transition-colors ${
-                  i <= step ? "bg-primary-foreground" : "bg-primary-foreground/25"
-                }`}
+                className={`h-1.5 flex-1 rounded-full transition-colors ${i <= step ? "bg-primary-foreground" : "bg-primary-foreground/25"
+                  }`}
               />
             ))}
           </div>
@@ -193,11 +226,10 @@ export const RequestPickupModal = ({
                     onDrop={onDrop}
                     role="button"
                     tabIndex={0}
-                    className={`border-2 border-dashed rounded-xl p-8 text-center space-y-3 cursor-pointer transition-colors ${
-                      dragActive
+                    className={`border-2 border-dashed rounded-xl p-8 text-center space-y-3 cursor-pointer transition-colors ${dragActive
                         ? "border-primary bg-primary/5"
                         : "border-border bg-muted/40 hover:bg-muted/70"
-                    }`}
+                      }`}
                   >
                     <div className="w-14 h-14 rounded-full bg-primary/10 mx-auto flex items-center justify-center">
                       <Upload className="w-7 h-7 text-primary" />
@@ -239,9 +271,9 @@ export const RequestPickupModal = ({
                     </div>
 
                     {scanning && (
-                      <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-2">
+                      <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-3">
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        Analyzing image...
+                        AI is analyzing your image...
                       </div>
                     )}
 
@@ -253,21 +285,29 @@ export const RequestPickupModal = ({
                             Scan complete
                           </span>
                         </div>
-                        <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div className="grid grid-cols-3 gap-3 text-sm">
+                          <div className="rounded-lg bg-card p-3">
+                            <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                              Category
+                            </p>
+                            <p className="font-bold text-sm text-foreground leading-tight mt-1">
+                              {scanResult.category}
+                            </p>
+                          </div>
                           <div className="rounded-lg bg-card p-3">
                             <p className="text-xs text-muted-foreground uppercase tracking-wide">
                               Volume
                             </p>
                             <p className="font-bold text-lg text-foreground">
-                              {scanResult.volume}
+                              {scanResult.volume_estimate.toFixed(2)} m³
                             </p>
                           </div>
                           <div className="rounded-lg bg-card p-3">
                             <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                              Vehicle
+                              Priority
                             </p>
                             <p className="font-bold text-lg text-foreground">
-                              {scanResult.vehicle}
+                              {scanResult.priority_score}/10
                             </p>
                           </div>
                         </div>
@@ -291,30 +331,26 @@ export const RequestPickupModal = ({
                 className="space-y-4"
               >
                 <div className="space-y-2">
-                  <Label htmlFor="category">Waste Category</Label>
+                  <Label htmlFor="category">
+                    Waste Category
+                    {scanResult && (
+                      <span className="ml-2 text-xs text-primary font-normal">
+                        (AI suggested)
+                      </span>
+                    )}
+                  </Label>
                   <Select value={category} onValueChange={setCategory}>
                     <SelectTrigger id="category">
                       <SelectValue placeholder="Select a category" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Cardboard & Paper">
-                        Cardboard & Paper
-                      </SelectItem>
-                      <SelectItem value="Plastics">Plastics</SelectItem>
-                      <SelectItem value="Electronics">Electronics</SelectItem>
-                      <SelectItem value="Bulk Waste">Bulk Waste</SelectItem>
-                      <SelectItem value="Organic">Organic</SelectItem>
+                      {WASTE_CATEGORIES.map((cat) => (
+                        <SelectItem key={cat} value={cat}>
+                          {cat}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="date">Preferred Date</Label>
-                  <Input
-                    id="date"
-                    type="date"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="notes">Notes (optional)</Label>
@@ -339,20 +375,27 @@ export const RequestPickupModal = ({
               >
                 <div className="rounded-xl border bg-card p-4 space-y-3 text-sm">
                   <Row label="Category" value={category} />
-                  <Row label="Date" value={date} />
                   <Row label="Notes" value={notes || "—"} />
                   <Row
                     label="AI Volume"
-                    value={scanResult?.volume ?? "Not scanned"}
+                    value={
+                      scanResult
+                        ? `${scanResult.volume_estimate.toFixed(2)} m³`
+                        : "Not scanned"
+                    }
                   />
                   <Row
-                    label="Vehicle"
-                    value={scanResult?.vehicle ?? "Auto-assign"}
+                    label="Priority"
+                    value={
+                      scanResult
+                        ? `${priorityLabel(scanResult.priority_score)} (${scanResult.priority_score}/10)`
+                        : "Auto-assessed"
+                    }
                   />
                 </div>
                 {scanResult && (
                   <Badge className="bg-primary/15 text-primary hover:bg-primary/20">
-                    AI-optimized vehicle assignment
+                    AI-classified waste
                   </Badge>
                 )}
               </motion.div>
@@ -374,7 +417,7 @@ export const RequestPickupModal = ({
           {step < STEPS.length - 1 ? (
             <Button
               onClick={() => setStep(step + 1)}
-              disabled={!canNext}
+              disabled={!canNext || scanning}
             >
               {step === 0 && !scanResult ? "Skip" : "Next"}{" "}
               <ArrowRight className="w-4 h-4" />
