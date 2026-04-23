@@ -9,7 +9,7 @@ import { CompositionChart } from "@/components/ui/composition-chart";
 import { Progress } from "@/components/ui/progress";
 import { Leaf, CheckCircle } from "lucide-react";
 
-// How many zero-waste weeks to consider a "full" streak milestone (100% bar)
+// How many collection weeks to consider a "full" streak milestone (100% bar)
 const STREAK_TARGET_WEEKS = 20;
 
 /**
@@ -25,10 +25,10 @@ function getWeekStart(date: Date): string {
 }
 
 /**
- * Returns the number of consecutive clean (zero-pickup) weeks up to now.
+ * Returns the number of consecutive weeks with at least one collected request.
  */
-function computeCleanStreak(dirtyWeeks: Set<string>): number {
-  if (dirtyWeeks.size === 0) return 0;
+function computeCollectionStreak(weeksWithCollections: Set<string>): number {
+  if (weeksWithCollections.size === 0) return 0;
 
   const now = new Date();
   const lookback = STREAK_TARGET_WEEKS * 4;
@@ -38,26 +38,62 @@ function computeCleanStreak(dirtyWeeks: Set<string>): number {
     d.setUTCDate(d.getUTCDate() - i * 7);
     const weekKey = getWeekStart(d);
 
-    if (dirtyWeeks.has(weekKey)) {
-      return i;
+    if (weeksWithCollections.has(weekKey)) {
+      continue;
     }
+    return i;
   }
 
-  return 0;
+  return lookback;
 }
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-interface MonthlyEntry {
+interface WeeklyEntry {
   label: string;
-  recyclables: number;
-  general: number;
+  primary: number;
+  secondary: number;
 }
 
 interface CompositionEntry {
   name: string;
   value: number;
   color: string;
+}
+
+const COMPOSITION_CATEGORIES = [
+  { label: "Cardboard & Paper", color: "#059669" },
+  { label: "Plastics", color: "#10b981" },
+  { label: "Electronics", color: "#0ea5e9" },
+  { label: "Bulk Waste", color: "#f59e0b" },
+  { label: "Organic", color: "#22c55e" },
+  { label: "Hazardous", color: "#ef4444" },
+  { label: "Other", color: "#94a3b8" },
+] as const;
+
+function buildWeeklySeries(weekCount: number) {
+  const now = new Date();
+  const series: WeeklyEntry[] = [];
+  const keys: string[] = [];
+
+  for (let i = weekCount - 1; i >= 0; i--) {
+    const d = new Date(now);
+    d.setUTCDate(d.getUTCDate() - i * 7);
+    const weekKey = getWeekStart(d);
+    const labelDate = new Date(`${weekKey}T00:00:00Z`);
+
+    keys.push(weekKey);
+    series.push({
+      label: labelDate.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      }),
+      primary: 0,
+      secondary: 0,
+    });
+  }
+
+  return { series, keys };
 }
 
 interface ReportsContentProps {
@@ -70,13 +106,9 @@ interface ReportsContentProps {
 export function ReportsContent({ userId }: ReportsContentProps) {
   const supabase = createClient();
 
-  const [monthlyData, setMonthlyData] = useState<MonthlyEntry[]>([
-    { label: "Jan", recyclables: 0, general: 0 },
-    { label: "Feb", recyclables: 0, general: 0 },
-    { label: "Mar", recyclables: 0, general: 0 },
-    { label: "Apr", recyclables: 0, general: 0 },
-    { label: "May", recyclables: 0, general: 0 },
-  ]);
+  const [weeklyData, setWeeklyData] = useState<WeeklyEntry[]>(
+    () => buildWeeklySeries(5).series,
+  );
 
   const [compositionData, setCompositionData] = useState<CompositionEntry[]>([
     { name: "Plastic & Paper", value: 0, color: "#059669" },
@@ -84,12 +116,12 @@ export function ReportsContent({ userId }: ReportsContentProps) {
     { name: "Other", value: 0, color: "#d1d5db" },
   ]);
 
-  const [totalWasteKg, setTotalWasteKg] = useState(0);
+  const [totalRecycledKg, setTotalRecycledKg] = useState(0);
   const [communityRank, setCommunityRank] = useState<string | null>(null);
-  const [cleanStreakWeeks, setCleanStreakWeeks] = useState(0);
+  const [collectionStreakWeeks, setCollectionStreakWeeks] = useState(0);
 
   const streakProgress = Math.min(
-    Math.round((cleanStreakWeeks / STREAK_TARGET_WEEKS) * 100),
+    Math.round((collectionStreakWeeks / STREAK_TARGET_WEEKS) * 100),
     100,
   );
 
@@ -100,7 +132,7 @@ export function ReportsContent({ userId }: ReportsContentProps) {
       try {
         const { data, error } = await supabase
           .from("pickup_requests")
-          .select("id,category,created_at");
+          .select("id,resident_id,category,created_at,status");
 
         if (error) {
           console.error(
@@ -116,13 +148,13 @@ export function ReportsContent({ userId }: ReportsContentProps) {
         const allRequests = data ?? [];
 
         const myRequests = userId
-          ? allRequests.filter((r) => r.id === userId)
+          ? allRequests.filter((r) => r.resident_id === userId)
           : allRequests;
 
         // ── Community rank ────────────────────────────────────────────────
         const countPerUser = new Map<string, number>();
         for (const row of allRequests) {
-          const uid = row.id ?? "__unknown__";
+          const uid = row.resident_id ?? "__unknown__";
           countPerUser.set(uid, (countPerUser.get(uid) ?? 0) + 1);
         }
         const myCount = userId ? (countPerUser.get(userId) ?? 0) : 0;
@@ -137,81 +169,82 @@ export function ReportsContent({ userId }: ReportsContentProps) {
           rankLabel = `Top ${topPct}%`;
         }
 
-        // ── Monthly chart ─────────────────────────────────────────────────
-        const now = new Date();
-        const monthCount = 5;
-        const months: MonthlyEntry[] = [];
-        const monthKeys: string[] = [];
-
-        for (let i = monthCount - 1; i >= 0; i--) {
-          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-          monthKeys.push(`${d.getFullYear()}-${d.getMonth()}`);
-          months.push({
-            label: d.toLocaleString("default", { month: "short" }),
-            recyclables: 0,
-            general: 0,
-          });
-        }
-
-        const recyclablesSet = new Set([
-          "recyclable",
-          "recyclables",
-          "plastic",
-          "paper",
-          "metal",
-          "glass",
-        ]);
-        const organicSet = new Set(["organic", "food", "compostable"]);
-        const compCounts = { plastic_paper: 0, organic: 0, other: 0 };
-        const weeksWithPickups = new Set<string>();
+        // ── Weekly collection chart ──────────────────────────────────────
+        const { series: weeks, keys: weekKeys } = buildWeeklySeries(5);
+        const categoryCounts: Record<string, number> = Object.fromEntries(
+          COMPOSITION_CATEGORIES.map((entry) => [entry.label, 0]),
+        );
+        const categoryLookup = new Map(
+          COMPOSITION_CATEGORIES.map((entry) => [
+            entry.label.toLowerCase(),
+            entry.label,
+          ]),
+        );
+        const weeksWithCollections = new Set<string>();
 
         for (const row of myRequests) {
-          const cat = (row.category || "").toLowerCase();
           const created = new Date(row.created_at);
-
-          const key = `${created.getFullYear()}-${created.getMonth()}`;
-          const idx = monthKeys.indexOf(key);
+          const weekKey = getWeekStart(created);
+          const idx = weekKeys.indexOf(weekKey);
           if (idx !== -1) {
-            if (recyclablesSet.has(cat)) months[idx].recyclables += 1;
-            else months[idx].general += 1;
+            if (row.status === "collected") weeks[idx].primary += 1;
+            else weeks[idx].secondary += 1;
           }
 
-          if (recyclablesSet.has(cat)) compCounts.plastic_paper += 1;
-          else if (organicSet.has(cat)) compCounts.organic += 1;
-          else compCounts.other += 1;
+          const normalized = (row.category ?? "Other").trim().toLowerCase();
+          const label = categoryLookup.get(normalized) ?? "Other";
+          categoryCounts[label] = (categoryCounts[label] ?? 0) + 1;
 
-          weeksWithPickups.add(getWeekStart(created));
+          if (row.status === "collected") {
+            weeksWithCollections.add(weekKey);
+          }
         }
 
         const totalComp =
-          compCounts.plastic_paper + compCounts.organic + compCounts.other || 1;
+          Object.values(categoryCounts).reduce(
+            (sum, value) => sum + value,
+            0,
+          ) || 1;
 
-        const composition: CompositionEntry[] = [
-          {
-            name: "Plastic & Paper",
-            value: Math.round((compCounts.plastic_paper / totalComp) * 100),
-            color: "#059669",
-          },
-          {
-            name: "Organic",
-            value: Math.round((compCounts.organic / totalComp) * 100),
-            color: "#10b981",
-          },
-          {
-            name: "Other",
-            value: Math.round((compCounts.other / totalComp) * 100),
-            color: "#d1d5db",
-          },
-        ];
+        const composition: CompositionEntry[] = COMPOSITION_CATEGORIES.map(
+          (entry) => ({
+            name: entry.label,
+            value: Math.round((categoryCounts[entry.label] / totalComp) * 100),
+            color: entry.color,
+          }),
+        );
 
-        const totalKg = myRequests.length * 5;
-        const streak = computeCleanStreak(weeksWithPickups);
+        let totalRecycled = 0;
+        if (userId) {
+          const { data: profile, error: profileError } = await supabase
+            .from("users")
+            .select("total_recycled")
+            .eq("id", userId)
+            .single();
+
+          if (profileError) {
+            console.error(
+              "Supabase error:",
+              profileError.message,
+              profileError.details,
+              profileError.hint,
+              profileError.code,
+            );
+          }
+
+          const collectedCount = myRequests.filter(
+            (request) => request.status === "collected",
+          ).length;
+          totalRecycled = Number(profile?.total_recycled ?? collectedCount * 5);
+        }
+
+        const streak = computeCollectionStreak(weeksWithCollections);
 
         if (!mounted) return;
-        setMonthlyData(months);
+        setWeeklyData(weeks);
         setCompositionData(composition);
-        setTotalWasteKg(totalKg);
-        setCleanStreakWeeks(streak);
+        setTotalRecycledKg(totalRecycled);
+        setCollectionStreakWeeks(streak);
         setCommunityRank(rankLabel);
       } catch (err) {
         console.error(err);
@@ -266,13 +299,11 @@ export function ReportsContent({ userId }: ReportsContentProps) {
                 Impact overview
               </p>
               <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  Total Waste Diverted
-                </p>
+                <p className="text-sm text-muted-foreground">Total Recycled</p>
                 <div className="flex flex-wrap items-end gap-6">
                   <div className="flex items-end gap-3">
                     <p className="text-7xl font-bold tracking-tight text-foreground">
-                      {totalWasteKg}
+                      {totalRecycledKg}
                     </p>
                     <span className="text-3xl font-semibold text-muted-foreground">
                       kg
@@ -309,10 +340,12 @@ export function ReportsContent({ userId }: ReportsContentProps) {
               </p>
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <p className="text-m text-muted-foreground">Clean Streak</p>
+                  <p className="text-m text-muted-foreground">
+                    Collection Streak
+                  </p>
                   <p className="text-3xl font-bold text-foreground">
-                    {cleanStreakWeeks}{" "}
-                    {cleanStreakWeeks === 1 ? "Week" : "Weeks"}
+                    {collectionStreakWeeks}{" "}
+                    {collectionStreakWeeks === 1 ? "Week" : "Weeks"}
                   </p>
                 </div>
               </div>
@@ -344,28 +377,28 @@ export function ReportsContent({ userId }: ReportsContentProps) {
           </CardContent>
         </Card>
 
-        {/* ── Monthly collection chart ──────────────────────────────────── */}
+        {/* ── Weekly collection chart ───────────────────────────────────── */}
         <Card className="bg-card shadow-sm h-full">
           <CardContent className="space-y-6 h-full">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-2xl font-bold text-foreground">
-                  Monthly Collection
+                  Weekly Collection
                 </p>
               </div>
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <div className="inline-flex items-center gap-2">
                   <span className="inline-flex h-2.5 w-2.5 rounded-full bg-primary" />
-                  Recyclables
+                  Collected
                 </div>
                 <div className="inline-flex items-center gap-2">
                   <span className="inline-flex h-2.5 w-2.5 rounded-full bg-muted" />
-                  General
+                  Other Requests
                 </div>
               </div>
             </div>
             <div className="flex-1">
-              <Chart data={monthlyData} />
+              <Chart data={weeklyData} />
             </div>
           </CardContent>
         </Card>

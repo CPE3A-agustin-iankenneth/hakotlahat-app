@@ -34,9 +34,16 @@ export function AdminMobileHeader() {
           Admin
         </span>
       </div>
-      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-        <CircleUserRound className="h-5 w-5" />
-        <span className="sr-only">Account</span>
+      <Button
+        asChild
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 text-muted-foreground"
+      >
+        <Link href="/admin/account">
+          <CircleUserRound className="h-5 w-5" />
+          <span className="sr-only">Account</span>
+        </Link>
       </Button>
     </header>
   );
@@ -60,7 +67,7 @@ export function AdminBottomNav() {
               "flex flex-col items-center gap-1 rounded-full px-3 py-1 transition-colors",
               isActive
                 ? "bg-primary/15 text-primary"
-                : "text-muted-foreground hover:text-foreground"
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
             <Icon className="h-[18px] w-[18px] shrink-0" />
