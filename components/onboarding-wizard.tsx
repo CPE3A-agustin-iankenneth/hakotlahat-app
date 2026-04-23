@@ -73,7 +73,7 @@ export default function OnboardingWizard({ userId, userEmail }: Props) {
   // Calculate total steps based on role
   const getTotalSteps = (): number => {
     if (role === "driver") return 4; // Role, Name, Vehicle Info, Photo (skip location)
-    return 4; // Role, Name, Location, Photo
+    return 5; // Role, Name, Location, Municipality, Photo
   };
 
   const TOTAL_STEPS = getTotalSteps();
@@ -87,18 +87,19 @@ export default function OnboardingWizard({ userId, userEmail }: Props) {
       if (stepNum === 3) return "vehicle";
       if (stepNum === 4) return "photo";
     } else {
-      // Residents: 1=Role, 2=Name, 3=Location, 4=Photo
+      // Residents: 1=Role, 2=Name, 3=Location, 4=Municipality, 5=Photo
       if (stepNum === 1) return "role";
       if (stepNum === 2) return "name";
       if (stepNum === 3) return "location";
-      if (stepNum === 4) return "photo";
+      if (stepNum === 4) return "municipality";
+      if (stepNum === 5) return "photo";
     }
     return "";
   };
 
-  // Fetch municipalities when role is selected as driver
+  // Fetch municipalities when role is selected
   useEffect(() => {
-    if (role === "driver" && municipalities.length === 0) {
+    if (role && municipalities.length === 0) {
       setIsMunicipalitiesLoading(true);
       fetch("/api/municipalities")
         .then((res) => res.json())
@@ -119,6 +120,9 @@ export default function OnboardingWizard({ userId, userEmail }: Props) {
     if (stepType === "role") return role !== null;
     if (stepType === "name") return fullName.trim().length >= 2;
     if (stepType === "location") return true; // Location is optional
+    if (stepType === "municipality") {
+      return municipalityId !== null;
+    }
     if (stepType === "vehicle") {
       // Validate driver fields
       return (
@@ -172,6 +176,8 @@ export default function OnboardingWizard({ userId, userEmail }: Props) {
             capacity_volume: capacityVolume,
             municipality_id: municipalityId,
           }),
+          // Resident and Driver: municipality_id
+          municipality_id: municipalityId,
         });
       } catch (err) {
         setError(err instanceof Error ? err.message : "Something went wrong");
@@ -216,6 +222,14 @@ export default function OnboardingWizard({ userId, userEmail }: Props) {
             <StepLocation
               locationData={locationData}
               onLocationChange={setLocationData}
+            />
+          )}
+          {getStepType(step) === "municipality" && (
+            <StepMunicipality
+              municipalityId={municipalityId}
+              onMunicipalityIdChange={setMunicipalityId}
+              municipalities={municipalities}
+              isLoading={isMunicipalitiesLoading}
             />
           )}
           {getStepType(step) === "vehicle" && (
@@ -694,7 +708,68 @@ function StepPhoto({
   );
 }
 
-/* ── Step 4 (Driver): Vehicle Info ──────────────────────────────────── */
+/* ── Step 4 (Resident): Municipality Selection ────────────────────────── */
+function StepMunicipality({
+  municipalityId,
+  onMunicipalityIdChange,
+  municipalities,
+  isLoading,
+}: {
+  municipalityId: string | null;
+  onMunicipalityIdChange: (v: string) => void;
+  municipalities: Municipality[];
+  isLoading: boolean;
+}) {
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          Select your municipality
+        </h1>
+        <p className="text-muted-foreground mt-1">
+          Choose the municipality you live in.
+        </p>
+      </div>
+
+      <div className="bg-card rounded-3xl p-5 flex flex-col gap-3">
+        <Label htmlFor="municipality" className="text-sm font-semibold">
+          Municipality
+        </Label>
+        {isLoading ? (
+          <div className="h-12 rounded-xl bg-muted flex items-center justify-center">
+            <span className="text-sm text-muted-foreground">
+              Loading municipalities...
+            </span>
+          </div>
+        ) : (
+          <Select value={municipalityId || ""} onValueChange={onMunicipalityIdChange}>
+            <SelectTrigger className="rounded-xl bg-muted border-0 h-12 text-base">
+              <SelectValue placeholder="Select your municipality" />
+            </SelectTrigger>
+            <SelectContent>
+              {municipalities.length === 0 ? (
+                <div className="p-2 text-sm text-muted-foreground text-center">
+                  No municipalities available
+                </div>
+              ) : (
+                municipalities.map((mun) => (
+                  <SelectItem key={mun.id} value={mun.id}>
+                    {mun.name}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
+        )}
+        <p className="text-xs text-muted-foreground">
+          Your municipality helps us match you with nearby waste collection services.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ── Step 3/4 (Driver): Vehicle Info ──────────────────────────────────── */
 function StepVehicleInfo({
   plateNumber,
   onPlateNumberChange,

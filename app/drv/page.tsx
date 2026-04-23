@@ -117,13 +117,191 @@ export default async function RoutePage() {
     : null;
 
   return (
-    <DriverMapClient
-      driverId={user.id}
-      municipalityId={profile.municipality_id}
-      pickupRequests={pickupRequests}
-      activeRoute={activeRoute as ActiveRoute}
-      driverSession={driverSession}
-      availableVehicles={availableVehicles}
-    />
+    <div className="flex h-screen bg-background text-foreground overflow-hidden">
+      {/* Map Container */}
+      <div className="flex-1 relative">
+        <div ref={mapContainer} className="w-full h-full" />
+
+        {/* Top Info Bar */}
+        <div className="absolute top-4 left-4 right-4 z-10 bg-card/80 backdrop-blur rounded-lg p-4 flex justify-between items-center">
+          <div className="flex gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-primary rounded-full" />
+              <span className="text-sm">GPS Signal: {routeData.gpsSignal}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-accent rounded-full" />
+              <span className="text-sm">5G Latency: {routeData.latency}</span>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-muted-foreground">Top 5% Drivers this week</p>
+            <p className="text-lg font-bold text-primary">
+              {routeData.topPercentile}%
+            </p>
+          </div>
+        </div>
+
+        {/* Zoom Controls */}
+        <div className="absolute bottom-6 left-4 z-10 flex flex-col gap-2">
+          <Button
+            size="icon"
+            className="bg-muted hover:bg-muted-foreground/20 text-foreground"
+            onClick={() => map.current?.zoomIn()}
+          >
+            +
+          </Button>
+          <Button
+            size="icon"
+            className="bg-muted hover:bg-muted-foreground/20 text-foreground"
+            onClick={() => map.current?.zoomOut()}
+          >
+            −
+          </Button>
+          <Button
+            size="icon"
+            className="bg-muted hover:bg-muted-foreground/20 text-foreground"
+            onClick={() => map.current?.easeTo({ bearing: 0, pitch: 0 })}
+          >
+            <Navigation className="w-4 h-4" />
+          </Button>
+        </div>
+
+        {/* Vehicle Status */}
+        <div className="absolute bottom-6 left-20 z-10 bg-card/80 backdrop-blur rounded-lg p-3 max-w-xs">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-primary rounded-full animate-pulse" />
+            <span className="text-xs font-semibold text-muted-foreground">
+              Vehicle Synced
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">{routeData.vehicleStatus}</p>
+        </div>
+      </div>
+
+      {/* Right Sidebar - Route Details */}
+      <div className="w-96 bg-card border-l border-border overflow-y-auto">
+        {/* Up Next Header */}
+        <div className="sticky top-0 bg-card/95 backdrop-blur border-b border-border p-6 z-20">
+          <div className="flex justify-between items-center">
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                Up Next
+              </p>
+              <h2 className="text-2xl font-bold mt-2">
+                {currentStop.address}
+              </h2>
+            </div>
+            <Badge variant="destructive" className="bg-destructive/20 text-destructive hover:bg-destructive/20 rounded">
+              {currentStop.priority}
+            </Badge>
+          </div>
+        </div>
+
+        {/* Details Section */}
+        <div className="p-6 space-y-6">
+          {/* Distance and Time */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-muted/50 rounded-lg p-4">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                Distance
+              </p>
+              <p className="text-3xl font-bold text-foreground mt-2">
+                {currentStop.distance}
+                <span className="text-lg text-muted-foreground ml-1">km</span>
+              </p>
+            </div>
+            <div className="bg-muted/50 rounded-lg p-4">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                Est. Time
+              </p>
+              <p className="text-3xl font-bold text-primary mt-2">
+                {currentStop.estTime}
+                <span className="text-lg text-muted-foreground ml-1">min</span>
+              </p>
+            </div>
+          </div>
+
+          {/* Cargo Type */}
+          <div className="flex items-start gap-3">
+            <Package className="w-5 h-5 text-muted-foreground mt-0.5" />
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                Cargo Type
+              </p>
+              <p className="text-foreground font-medium">{currentStop.cargoType}</p>
+            </div>
+          </div>
+
+          {/* Contact */}
+          <div className="flex items-start gap-3">
+            <Phone className="w-5 h-5 text-muted-foreground mt-0.5" />
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                On-site Contact
+              </p>
+              <p className="text-foreground font-medium">{currentStop.contact}</p>
+              <p className="text-sm text-muted-foreground">{currentStop.contactPhone}</p>
+            </div>
+          </div>
+
+          {/* Instructions */}
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-muted-foreground mt-0.5" />
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                Instructions
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {currentStop.instructions}
+              </p>
+            </div>
+          </div>
+
+          {/* Route Stops List */}
+          {routeData.stops.length > 1 && (
+            <div className="border-t border-border pt-6">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-3">
+                Other Stops
+              </p>
+              <div className="space-y-2">
+                {routeData.stops.map((stop, index) => (
+                  <Button
+                    key={stop.id}
+                    variant="ghost"
+                    onClick={() => setSelectedStop(stop)}
+                    className={`w-full h-auto justify-start text-left p-3 rounded-lg transition-colors ${selectedStop?.id === stop.id
+                        ? 'bg-primary/20 border border-primary'
+                        : 'bg-muted/50 hover:bg-muted-foreground/30'
+                      }`}
+                  >
+                    <p className="text-sm font-medium">
+                      Stop {index + 1}: {stop.address}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {stop.distance} km • {stop.estTime} min
+                    </p>
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Start Route Button */}
+        <div className="sticky bottom-0 bg-card/95 backdrop-blur border-t border-border p-6">
+          <Button
+            onClick={() => setIsRouteStarted(!isRouteStarted)}
+            className={`w-full py-6 text-lg font-bold transition-all ${isRouteStarted
+                ? 'bg-muted-foreground/20 hover:bg-gray-600'
+                : 'bg-primary hover:bg-primary text-foreground'
+              }`}
+          >
+            {isRouteStarted ? 'ROUTE ACTIVE' : 'START ROUTE'}
+            {isRouteStarted ? '' : ' →'}
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }

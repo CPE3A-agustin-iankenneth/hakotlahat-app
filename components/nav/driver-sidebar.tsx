@@ -36,7 +36,9 @@ export function DriverSidebar() {
       {/* Nav */}
       <nav className="flex flex-1 flex-col gap-1 pr-px">
         {navItems.map(({ href, label, icon: Icon, badge }) => {
-          const isActive = pathname === href || pathname.startsWith(href + "/");
+          const isActive = href === "/drv"
+            ? pathname === href
+            : pathname === href || pathname.startsWith(href + "/");
           return (
             <Link
               key={href}
