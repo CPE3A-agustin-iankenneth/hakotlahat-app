@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   PlusCircle,
@@ -22,7 +22,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
-import { RequestPickupModal, RequestPickupData } from "@/components/pickup-request-modal";
+import {
+  RequestPickupModal,
+  RequestPickupData,
+} from "@/components/pickup-request-modal";
 import { createClient } from "@/lib/supabase/client";
 import { uploadImage } from "@/lib/upload-image";
 
@@ -41,35 +44,139 @@ interface ActivityItem {
   status: "Completed" | "Pending" | "In Progress";
 }
 
-const mockTicket = "#4920";
+const initialStats = { totalRecycled: 0, ecoCredits: 0 };
 
-const initialSteps: CollectionStep[] = [
-  { label: "Request Pending", detail: "Validated by system at 08:30 AM", completed: true },
-  { label: "Route Scheduled", detail: "Driver: Marcus (Truck #08)", completed: true },
-  { label: "Collected", detail: "Expected by 12:00 PM", completed: false },
-  { label: "Processing", detail: "At recycling facility", completed: false },
-];
-
-const initialStats = { totalRecycled: 842, ecoCredits: 2450 };
-
-const initialActivity: ActivityItem[] = [
-  { id: "1", category: "Cardboard & Paper", type: "Scheduled Pickup", date: "Oct 24, 2023", points: 45, status: "Completed" },
-  { id: "2", category: "Electronics", type: "Drop-off", date: "Oct 20, 2023", points: 120, status: "Completed" },
-  { id: "3", category: "Plastics", type: "Scheduled Pickup", date: "Oct 18, 2023", points: 30, status: "Completed" },
-];
+const initialActivity: ActivityItem[] = [];
 
 const Index = () => {
-  const [steps, setSteps] = useState(initialSteps);
+  const [steps, setSteps] = useState<CollectionStep[]>([]);
   const [activity, setActivity] = useState(initialActivity);
   const [stats, setStats] = useState(initialStats);
   const [pickupOpen, setPickupOpen] = useState(false);
-  const [selectedActivity, setSelectedActivity] = useState<ActivityItem | null>(null);
+  const [selectedActivity, setSelectedActivity] = useState<ActivityItem | null>(
+    null,
+  );
   const [activityOpen, setActivityOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [latestRequest, setLatestRequest] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+          error: authError,
+        } = await supabase.auth.getUser();
+
+        if (authError || !user) {
+          console.error("User not authenticated");
+          setLoading(false);
+          return;
+        }
+
+        // Fetch user's total recycled
+        const { data: userData } = await supabase
+          .from("users")
+          .select("total_recycled")
+          .eq("id", user.id)
+          .single();
+
+        // Fetch user's pickup requests (activity)
+        const { data: pickupData } = await supabase
+          .from("pickup_requests")
+          .select("id, category, status, created_at, volume_estimate")
+          .eq("resident_id", user.id)
+          .order("created_at", { ascending: false });
+
+        // Transform pickup data to activity items
+        const activityItems: ActivityItem[] = (pickupData || []).map(
+          (pickup) => ({
+            id: pickup.id,
+            category: pickup.category,
+            type: "Scheduled Pickup",
+            date: new Date(pickup.created_at).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            }),
+            points:
+              pickup.status === "collected"
+                ? Math.ceil((pickup.volume_estimate || 0) * 5)
+                : 0,
+            status:
+              pickup.status === "pending"
+                ? "Pending"
+                : pickup.status === "scheduled"
+                  ? "In Progress"
+                  : "Completed",
+          }),
+        );
+
+        // Calculate eco credits and total recycled weight from history
+        const ecoCredits = activityItems.reduce(
+          (sum, item) => sum + item.points,
+          0,
+        );
+
+        const totalRecycledHistory = (pickupData || [])
+          .filter((p) => p.status === "collected")
+          .reduce(
+            (sum, p) => sum + Math.ceil((p.volume_estimate || 0) * 2.4),
+            0,
+          );
+
+        // Map latest request to steps (only if from today)
+        const latest = pickupData?.[0];
+        const isToday = latest ? new Date(latest.created_at).toDateString() === new Date().toDateString() : false;
+        
+        if (latest && isToday) {
+          setLatestRequest(latest);
+          const s = latest.status;
+          setSteps([
+            {
+              label: "Request Pending",
+              detail: "Validated by system",
+              completed: s === "pending" || s === "scheduled" || s === "collected",
+            },
+            {
+              label: "Route Scheduled",
+              detail: s === "scheduled" || s === "collected" ? "Driver assigned" : "Pending assignment",
+              completed: s === "scheduled" || s === "collected",
+            },
+            {
+              label: "Collected",
+              detail: s === "collected" ? "Items picked up" : "Expected soon",
+              completed: s === "collected",
+            },
+          ]);
+        } else {
+          setLatestRequest(null);
+          setSteps([]);
+        }
+
+        setStats({
+          totalRecycled: totalRecycledHistory || userData?.total_recycled || 0,
+          ecoCredits: ecoCredits,
+        });
+        setActivity(activityItems);
+      } catch (error) {
+        console.error("Failed to fetch user data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   const handlePickupSubmit = async (data: RequestPickupData) => {
     const supabase = createClient();
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
       toast.error("You must be logged in to submit a request.");
       return;
@@ -88,10 +195,12 @@ const Index = () => {
         imageUrl = await uploadImage(
           data.imageFile,
           "pickup-images",
-          `${user.id}/${Date.now()}.${ext}`
+          `${user.id}/${Date.now()}.${ext}`,
         );
       } catch (err) {
-        toast.error("Image upload failed — request will be submitted without photo.");
+        toast.error(
+          "Image upload failed — request will be submitted without photo.",
+        );
         console.error("Image upload failed:", err);
       }
     }
@@ -114,40 +223,87 @@ const Index = () => {
       return;
     }
 
-    const newItem: ActivityItem = {
-      id: Date.now().toString(),
-      category: data.category,
+    // Refresh latest request status
+    const { data: latestData } = await supabase
+      .from("pickup_requests")
+      .select("*")
+      .eq("resident_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (latestData) {
+      setLatestRequest(latestData);
+      setSteps([
+        {
+          label: "Request Pending",
+          detail: "Validated by system",
+          completed: true,
+        },
+        {
+          label: "Route Scheduled",
+          detail: "Pending assignment",
+          completed: false,
+        },
+        {
+          label: "Collected",
+          detail: "Expected soon",
+          completed: false,
+        },
+      ]);
+    }
+    const extra = data.estimatedVolume
+      ? ` (AI volume: ${data.estimatedVolume} m³)`
+      : "";
+    const dateStr = new Date().toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+    toast.success(`Pickup requested — ${data.category} on ${dateStr}${extra}.`);
+
+    // Refetch activity data to include the new submission
+    const { data: pickupData } = await supabase
+      .from("pickup_requests")
+      .select("id, category, status, created_at, volume_estimate")
+      .eq("resident_id", user.id)
+      .order("created_at", { ascending: false });
+
+    const activityItems: ActivityItem[] = (pickupData || []).map((pickup) => ({
+      id: pickup.id,
+      category: pickup.category,
       type: "Scheduled Pickup",
-      date: new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
-      points: 0,
-      status: "Pending",
-    };
-    setActivity([newItem, ...activity]);
-    setSteps((prev) =>
-      prev.map((s, i) =>
-        i === 0
-          ? { ...s, detail: `New request submitted at ${new Date().toLocaleTimeString()}`, completed: true }
-          : s
-      )
+      date: new Date(pickup.created_at).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }),
+      points:
+        pickup.status === "collected"
+          ? Math.ceil((pickup.volume_estimate || 0) * 5)
+          : 0,
+      status:
+        pickup.status === "pending"
+          ? "Pending"
+          : pickup.status === "scheduled"
+            ? "In Progress"
+            : "Completed",
+    }));
+
+    const ecoCredits = activityItems.reduce(
+      (sum, item) => sum + item.points,
+      0,
     );
-    const extra = data.estimatedVolume ? ` (AI volume: ${data.estimatedVolume} m³)` : "";
-    toast.success(`Pickup requested — ${newItem.category} on ${newItem.date}${extra}.`);
+
+    const totalRecycled = (pickupData || [])
+      .filter((p) => p.status === "collected")
+      .reduce((sum, p) => sum + Math.ceil((p.volume_estimate || 0) * 2.4), 0);
+
+    setActivity(activityItems);
+    setStats({ totalRecycled, ecoCredits });
   };
 
-  const advanceStep = () => {
-    const nextIdx = steps.findIndex((s) => !s.completed);
-    if (nextIdx === -1) {
-      toast("All steps complete — this collection is fully processed.");
-      return;
-    }
-    setSteps((prev) => prev.map((s, i) => (i === nextIdx ? { ...s, completed: true } : s)));
-    if (nextIdx === 2) {
-      setStats((s) => ({ totalRecycled: s.totalRecycled + 12, ecoCredits: s.ecoCredits + 25 }));
-      toast.success("Collected! +12kg recycled, +25 eco credits.");
-    } else {
-      toast(`${steps[nextIdx].label} — status updated.`);
-    }
-  };
+  // Removed advanceStep demo function
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -167,8 +323,9 @@ const Index = () => {
             Clean streets start at your doorstep.
           </h1>
           <p className="text-muted-foreground mt-4 max-w-2xl text-lg">
-            Schedule a bulk waste pickup in seconds and track our eco-friendly disposal process in
-            real-time. Includes built-in AI volume estimation.
+            Schedule a bulk waste pickup in seconds and track our eco-friendly
+            disposal process in real-time. Includes built-in AI volume
+            estimation.
           </p>
           <Button
             onClick={() => setPickupOpen(true)}
@@ -190,30 +347,43 @@ const Index = () => {
           >
             <div className="flex items-center justify-between">
               <h3 className="font-semibold">Collection Status</h3>
-              <Badge variant="secondary">Ticket {mockTicket}</Badge>
+              {latestRequest && (
+                <Badge variant="secondary">
+                  Ticket #{latestRequest.id.slice(0, 5)}
+                </Badge>
+              )}
             </div>
             <div className="space-y-3">
-              {steps.map((step) => (
-                <div key={step.label} className="flex gap-3">
-                  <div className="mt-0.5">
-                    {step.completed ? (
-                      <CheckCircle2 className="w-5 h-5 text-primary" />
-                    ) : (
-                      <Circle className="w-5 h-5 text-muted-foreground" />
-                    )}
+              {steps.length > 0 ? (
+                steps.map((step) => (
+                  <div key={step.label} className="flex gap-3">
+                    <div className="mt-0.5">
+                      {step.completed ? (
+                        <CheckCircle2 className="w-5 h-5 text-primary" />
+                      ) : (
+                        <Circle className="w-5 h-5 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div>
+                      <p
+                        className={`text-sm font-medium ${step.completed ? "" : "text-muted-foreground"}`}
+                      >
+                        {step.label}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {step.detail}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className={`text-sm font-medium ${step.completed ? "" : "text-muted-foreground"}`}>
-                      {step.label}
-                    </p>
-                    <p className="text-xs text-muted-foreground">{step.detail}</p>
-                  </div>
+                ))
+              ) : (
+                <div className="py-4 text-center">
+                  <p className="text-sm text-muted-foreground italic">
+                    No active requests.
+                  </p>
                 </div>
-              ))}
+              )}
             </div>
-            <Button variant="outline" size="sm" onClick={advanceStep} className="w-full">
-              Advance Status (Demo)
-            </Button>
           </motion.div>
 
           <motion.div
@@ -225,7 +395,8 @@ const Index = () => {
             <h3 className="font-semibold">Total Recycled</h3>
             <div className="flex items-end justify-between mt-4">
               <p className="text-4xl font-bold">
-                {stats.totalRecycled} <span className="text-lg text-muted-foreground">kg</span>
+                {stats.totalRecycled}{" "}
+                <span className="text-lg text-muted-foreground">kg</span>
               </p>
               <Leaf className="w-8 h-8 text-primary" />
             </div>
@@ -239,7 +410,9 @@ const Index = () => {
           >
             <h3 className="font-semibold">Eco Credits</h3>
             <div className="flex items-end justify-between mt-4">
-              <p className="text-4xl font-bold">{stats.ecoCredits.toLocaleString()}</p>
+              <p className="text-4xl font-bold">
+                {stats.ecoCredits.toLocaleString()}
+              </p>
               <Star className="w-8 h-8 text-primary" />
             </div>
           </motion.div>
@@ -251,7 +424,9 @@ const Index = () => {
             <h3 className="font-semibold">Recent Activity</h3>
             <Button
               variant="link"
-              onClick={() => toast(`Showing all activity — ${activity.length} entries.`)}
+              onClick={() =>
+                toast(`Showing all activity — ${activity.length} entries.`)
+              }
               className="text-primary font-semibold p-0 h-auto"
             >
               View All
@@ -280,8 +455,12 @@ const Index = () => {
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="text-right">
-                    <p className="text-sm font-semibold text-primary">+{item.points} pts</p>
-                    <p className="text-xs text-muted-foreground">{item.status}</p>
+                    <p className="text-sm font-semibold text-primary">
+                      +{item.points} pts
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {item.status}
+                    </p>
                   </div>
                   <ChevronRight className="w-4 h-4 text-muted-foreground" />
                 </div>
@@ -315,7 +494,9 @@ const Index = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Points Earned</span>
-                <span className="font-medium">+{selectedActivity.points} pts</span>
+                <span className="font-medium">
+                  +{selectedActivity.points} pts
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Reference ID</span>
