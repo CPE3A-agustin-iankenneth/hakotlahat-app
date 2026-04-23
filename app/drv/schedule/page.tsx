@@ -10,53 +10,42 @@ import {
   Navigation,
   Package,
   Plus,
-  Scale,
+  Route,
 } from "lucide-react";
 
-const itineraryStops = [
-  {
-    id: "13",
-    eta: "08:15 AM",
-    title: "Lakeside Retail Park",
-    subtitle: "Unit 4, Sector B",
-    status: "Delivered",
-    done: true,
-  },
-  {
-    id: "14",
-    eta: "09:45 AM",
-    title: "TechCorp Distribution Center",
-    subtitle: "1242 Innovation Way, North Industrial District",
-    items: 24,
-    weight: 420,
-    isCurrent: true,
-    badges: ["Current Stop", "High Volume", "Priority"],
-  },
-  {
-    id: "15",
-    eta: "10:20 AM",
-    title: "Oakwood Residential Complex",
-    subtitle: "88 Silver Lane, Apartment Block C",
-  },
-  {
-    id: "16",
-    eta: "10:55 AM",
-    title: "Green Grocers Co-op",
-    subtitle: "Central Market Sq, Unit 12",
-  },
-  {
-    id: "17",
-    eta: "11:30 AM",
-    title: "Harbor View Apartments",
-    subtitle: "44 Waterfront Dr, Pier 7",
-  },
-] as const;
-
-const badgeStyles: Record<string, string> = {
-  "Current Stop": "bg-primary text-primary-foreground",
-  "High Volume": "bg-destructive text-destructive-foreground",
-  Priority: "bg-secondary text-secondary-foreground",
+type RouteStop = {
+  requestId: string;
+  order: number;
+  lng: number;
+  lat: number;
+  category: string | null;
+  priority_score: number;
+  volume_estimate: number | null;
+  arrival: number;
 };
+
+type OptimizedPath = {
+  coordinates: [number, number][];
+  stops?: RouteStop[];
+  totalDuration?: number;
+  totalDistance?: number;
+};
+
+function formatArrival(seconds: number, routeStartedAt: string): string {
+  const startMs = new Date(routeStartedAt).getTime();
+  const arrivalMs = startMs + seconds * 1000;
+  return new Date(arrivalMs).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+function formatDuration(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+
+function formatDistance(meters: number): string {
+  return meters >= 1000 ? `${(meters / 1000).toFixed(1)} km` : `${meters} m`;
+}
 
 export default async function SchedulePage() {
   const supabase = await createClient();
@@ -65,6 +54,35 @@ export default async function SchedulePage() {
   } = await supabase.auth.getUser();
 
   if (!user) redirect("/auth/login");
+
+  // Fetch active route with stop data
+  const { data: activeRouteRaw } = await supabase
+    .from("routes")
+    .select("id, optimized_path, created_at")
+    .eq("driver_id", user.id)
+    .eq("status", "active")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const optimizedPath = activeRouteRaw?.optimized_path as OptimizedPath | null;
+  const stops: RouteStop[] = optimizedPath?.stops ?? [];
+  const routeStartedAt = activeRouteRaw?.created_at as string | undefined;
+
+  // Fetch current status of each pickup request so we can show collected vs pending
+  const requestIds = stops.map((s) => s.requestId);
+  const { data: requestStatuses } = requestIds.length > 0
+    ? await supabase
+        .from("pickup_requests")
+        .select("id, status")
+        .in("id", requestIds)
+    : { data: [] };
+
+  const statusMap = new Map<string, string>(
+    (requestStatuses ?? []).map((r) => [r.id, r.status])
+  );
+
+  const collectedCount = [...statusMap.values()].filter((s) => s === "collected").length;
 
   return (
     <div className="mx-auto w-full max-w-4xl px-3 py-4 md:px-8 md:py-8">
@@ -76,7 +94,12 @@ export default async function SchedulePage() {
                 Today&apos;s Itinerary
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Tuesday, Oct 24 • Route HL-402
+                {new Date().toLocaleDateString("en-US", {
+                  weekday: "long",
+                  month: "short",
+                  day: "numeric",
+                })}
+                {activeRouteRaw && ` • Route ${activeRouteRaw.id.slice(0, 8).toUpperCase()}`}
               </p>
             </div>
             <div className="text-right">
@@ -84,107 +107,150 @@ export default async function SchedulePage() {
                 Shift Progress
               </p>
               <p className="mt-1 text-xl font-semibold text-muted-foreground">
-                <span className="text-4xl font-black text-foreground">14</span> /
-                45 Stops Completed
+                <span className="text-4xl font-black text-foreground">{collectedCount}</span> /{" "}
+                {stops.length} Stops Completed
               </p>
             </div>
           </div>
 
-          <div className="mt-5 h-2 rounded-full bg-muted">
-            <div className="h-full w-[31%] rounded-full bg-gradient-to-r from-primary to-secondary" />
-          </div>
+          {stops.length > 0 && (
+            <div className="mt-5 h-2 rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-primary to-secondary transition-all"
+                style={{ width: `${stops.length > 0 ? (collectedCount / stops.length) * 100 : 0}%` }}
+              />
+            </div>
+          )}
 
-          <div className="mt-2 flex items-center justify-between text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-            <span>Depot Start: 06:00 AM</span>
-            <span>Est. Finish: 04:30 PM</span>
-          </div>
+          {optimizedPath?.totalDuration && optimizedPath?.totalDistance && (
+            <div className="mt-2 flex items-center justify-between text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              <span>
+                Est. duration: {formatDuration(optimizedPath.totalDuration)}
+              </span>
+              <span>Total distance: {formatDistance(optimizedPath.totalDistance)}</span>
+            </div>
+          )}
         </div>
 
         <div className="relative px-5 py-4 md:px-6">
           <div className="pointer-events-none absolute bottom-4 left-9 top-4 hidden w-px bg-gradient-to-b from-primary/60 via-border to-muted md:block" />
 
-          <div className="space-y-4">
-            {itineraryStops.map((stop) => (
-              <Card
-                key={stop.id}
-                className={`relative rounded-xl border px-4 py-3 transition-colors ${
-                  stop.isCurrent
-                    ? "border-primary/70 bg-card/90 shadow-md ring-1 ring-primary/25"
-                    : "border-border bg-card/70"
-                }`}
-              >
-                <span
-                  className={`absolute -left-7 top-9 hidden h-3.5 w-3.5 rounded-full border md:block ${
-                    stop.isCurrent
-                      ? "border-primary-foreground bg-primary ring-4 ring-primary/20"
-                      : stop.done
-                        ? "border-secondary bg-secondary"
-                        : "border-border bg-muted"
-                  }`}
-                />
+          {stops.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
+              <Route className="h-12 w-12 mb-4 opacity-30" />
+              <p className="text-lg font-semibold">No active route</p>
+              <p className="text-sm mt-1">
+                Go to the map and tap &quot;Optimize Route&quot; to generate today&apos;s schedule.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {stops.map((stop) => {
+                const status = statusMap.get(stop.requestId) ?? "scheduled";
+                const isDone = status === "collected";
+                const isCurrent =
+                  !isDone &&
+                  stops.find((s) => statusMap.get(s.requestId) !== "collected")?.requestId ===
+                    stop.requestId;
 
-                {stop.badges && (
-                  <div className="mb-3 flex flex-wrap gap-2">
-                    {stop.badges.map((badge) => (
-                      <Badge
-                        key={badge}
-                        className={`text-[10px] uppercase tracking-wide ${badgeStyles[badge]}`}
-                      >
-                        {badge}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
+                const badges: string[] = [];
+                if (isCurrent) badges.push("Current Stop");
+                if (stop.priority_score >= 4) badges.push("High Priority");
+                if ((stop.volume_estimate ?? 0) > 5) badges.push("High Volume");
 
-                <div className="flex items-center justify-between gap-4">
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                      Stop #{stop.id} • ETA {stop.eta}
-                    </p>
-                    <h2
-                      className={`truncate text-2xl font-extrabold tracking-tight ${
-                        stop.done
-                          ? "text-muted-foreground/70 line-through"
-                          : "text-foreground"
+                const badgeStyles: Record<string, string> = {
+                  "Current Stop": "bg-primary text-primary-foreground",
+                  "High Priority": "bg-destructive text-destructive-foreground",
+                  "High Volume": "bg-secondary text-secondary-foreground",
+                };
+
+                return (
+                  <Card
+                    key={stop.requestId}
+                    className={`relative rounded-xl border px-4 py-3 transition-colors ${
+                      isCurrent
+                        ? "border-primary/70 bg-card/90 shadow-md ring-1 ring-primary/25"
+                        : isDone
+                          ? "border-border bg-card/40 opacity-60"
+                          : "border-border bg-card/70"
+                    }`}
+                  >
+                    <span
+                      className={`absolute -left-7 top-9 hidden h-3.5 w-3.5 rounded-full border md:block ${
+                        isCurrent
+                          ? "border-primary-foreground bg-primary ring-4 ring-primary/20"
+                          : isDone
+                            ? "border-secondary bg-secondary"
+                            : "border-border bg-muted"
                       }`}
-                    >
-                      {stop.title}
-                    </h2>
-                    <p className="truncate text-base text-muted-foreground">
-                      {stop.subtitle}
-                      {stop.status ? ` • ${stop.status}` : ""}
-                    </p>
+                    />
 
-                    {stop.isCurrent && (
-                      <div className="mt-3 flex items-center gap-5 text-foreground">
-                        <span className="inline-flex items-center gap-1.5 text-lg font-bold">
-                          <Package className="h-4 w-4 text-primary" />
-                          {stop.items} Items
-                        </span>
-                        <span className="inline-flex items-center gap-1.5 text-lg font-bold">
-                          <Scale className="h-4 w-4 text-primary" />
-                          {stop.weight} kg
-                        </span>
+                    {badges.length > 0 && (
+                      <div className="mb-3 flex flex-wrap gap-2">
+                        {badges.map((badge) => (
+                          <Badge
+                            key={badge}
+                            className={`text-[10px] uppercase tracking-wide ${badgeStyles[badge]}`}
+                          >
+                            {badge}
+                          </Badge>
+                        ))}
                       </div>
                     )}
-                  </div>
 
-                  {stop.isCurrent ? (
-                    <Button
-                      className="shrink-0 rounded-xl px-6 py-8 text-xl font-black transition hover:brightness-110"
-                    >
-                      <Navigation className="h-5 w-5" />
-                      Navigate
-                    </Button>
-                  ) : stop.done ? (
-                    <CheckCircle2 className="h-6 w-6 shrink-0 text-secondary" />
-                  ) : (
-                    <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
-                  )}
-                </div>
-              </Card>
-            ))}
-          </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                          Stop #{stop.order}
+                          {routeStartedAt && stop.arrival > 0 && (
+                            <> • ETA {formatArrival(stop.arrival, routeStartedAt)}</>
+                          )}
+                        </p>
+                        <h2
+                          className={`truncate text-2xl font-extrabold tracking-tight ${
+                            isDone
+                              ? "text-muted-foreground/70 line-through"
+                              : "text-foreground"
+                          }`}
+                        >
+                          {stop.category ?? "Unknown Category"}
+                        </h2>
+                        <p className="truncate text-base text-muted-foreground">
+                          {stop.lat.toFixed(4)}, {stop.lng.toFixed(4)}
+                          {isDone ? " • Collected" : ""}
+                        </p>
+
+                        {isCurrent && (
+                          <div className="mt-3 flex items-center gap-5 text-foreground">
+                            <span className="inline-flex items-center gap-1.5 text-lg font-bold">
+                              <Package className="h-4 w-4 text-primary" />
+                              Priority {stop.priority_score}
+                            </span>
+                            {stop.volume_estimate !== null && (
+                              <span className="inline-flex items-center gap-1.5 text-lg font-bold">
+                                {stop.volume_estimate} L
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {isCurrent ? (
+                        <Button className="shrink-0 rounded-xl px-6 py-8 text-xl font-black transition hover:brightness-110">
+                          <Navigation className="h-5 w-5" />
+                          Navigate
+                        </Button>
+                      ) : isDone ? (
+                        <CheckCircle2 className="h-6 w-6 shrink-0 text-secondary" />
+                      ) : (
+                        <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+                      )}
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
 
           <Button
             size="icon"

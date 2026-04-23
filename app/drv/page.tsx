@@ -1,157 +1,120 @@
-'use client';
+import { createClient } from '@/lib/supabase/server';
+import { redirect } from 'next/navigation';
+import { DriverMapClient } from '@/components/drv/driver-map-client';
+import type { PickupRequest, DriverSession, ActiveRoute } from '@/components/drv/driver-map-client';
 
-import { useEffect, useRef, useState } from 'react';
-import maplibregl from 'maplibre-gl';
-import 'maplibre-gl/dist/maplibre-gl.css';
-import { Phone, Package, AlertCircle, Navigation } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+export default async function RoutePage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-interface RouteStop {
-  id: string;
-  address: string;
-  distance: number;
-  estTime: number;
-  volume: string;
-  priority: 'HIGH VOLUME' | 'STANDARD';
-  cargoType: string;
-  contact: string;
-  contactPhone: string;
-  instructions: string;
-  lat: number;
-  lng: number;
-}
+  if (!user) redirect('/auth/login');
 
-interface RouteData {
-  id: string;
-  stops: RouteStop[];
-  currentStop: number;
-  gpsSignal: 'Strong' | 'Weak';
-  latency: string;
-  topPercentile: number;
-  vehicleStatus: string;
-  vehicleId: string;
-}
+  const { data: profile } = await supabase
+    .from('users')
+    .select('full_name, municipality_id')
+    .eq('id', user.id)
+    .single();
 
-// Mock data - replace with API call
-const mockRouteData: RouteData = {
-  id: 'route-1',
-  currentStop: 0,
-  gpsSignal: 'Strong',
-  latency: '12ms',
-  topPercentile: 5,
-  vehicleStatus: 'TRUCK #ML-5020 IS READY',
-  vehicleId: 'ML-5020',
-  stops: [
-    {
-      id: 'stop-1',
-      address: '42 Green Valley Ave',
-      distance: 0.8,
-      estTime: 4,
-      volume: 'HIGH VOLUME',
-      priority: 'HIGH VOLUME',
-      cargoType: 'Premium Recyclables',
-      contact: 'Robert Chen',
-      contactPhone: '+63 912',
-      instructions: 'Gate code 4692. Use loading bay C.',
-      lat: 10.7969,
-      lng: 106.7093,
-    },
-  ],
-};
+  if (!profile?.municipality_id) redirect('/onboarding');
 
-export default function RoutePage() {
-  const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<maplibregl.Map | null>(null);
-  const [routeData] = useState<RouteData>(mockRouteData);
-  const [isRouteStarted, setIsRouteStarted] = useState(false);
-  const [selectedStop, setSelectedStop] = useState<RouteStop | null>(
-    mockRouteData.stops[0]
-  );
+  // Supabase join returns users as array; filter to same municipality after fetch
+  const { data: allRequests } = await supabase
+    .from('pickup_requests')
+    .select(
+      `id, latitude, longitude, status, priority_score,
+       volume_estimate, category, image_url, created_at,
+       users!resident_id ( full_name, municipality_id )`
+    )
+    .in('status', ['pending', 'scheduled']);
 
-  useEffect(() => {
-    if (!mapContainer.current) return;
+  // Normalize Supabase's array join to single object and filter by municipality
+  const pickupRequests: PickupRequest[] = (allRequests ?? [])
+    .map((r) => ({
+      ...r,
+      // Supabase returns the joined relation as array or object depending on version
+      users: Array.isArray(r.users) ? (r.users[0] ?? null) : r.users,
+    }))
+    .filter(
+      (r) => r.users?.municipality_id === profile.municipality_id
+    ) as PickupRequest[];
 
-    // Initialize map
-    map.current = new maplibregl.Map({
-      container: mapContainer.current,
-      style: 'https://demotiles.maplibre.org/style.json',
-      center: [106.7093, 10.7969],
-      zoom: 14,
-      pitch: 0,
-      bearing: 0,
-    });
+  // Active route for this driver (if any)
+  const { data: activeRouteRaw } = await supabase
+    .from('routes')
+    .select('id, status, optimized_path, created_at')
+    .eq('driver_id', user.id)
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
-    // Add navigation controls
-    map.current.addControl(new maplibregl.NavigationControl(), 'bottom-left');
+  type OptimizedPath = {
+    coordinates: [number, number][];
+    stops?: {
+      requestId: string;
+      order: number;
+      lng: number;
+      lat: number;
+      category: string | null;
+      priority_score: number;
+      volume_estimate: number | null;
+      arrival: number;
+    }[];
+    totalDuration?: number;
+    totalDistance?: number;
+  };
 
-    // Add markers for stops
-    routeData.stops.forEach((stop, index) => {
-      const el = document.createElement('div');
-      el.className = 'w-8 h-8 rounded-full flex items-center justify-center font-bold text-foreground cursor-pointer';
-
-      if (index === 0) {
-        el.className += ' bg-primary';
-      } else if (index === routeData.stops.length - 1) {
-        el.className += ' bg-destructive';
-      } else {
-        el.className += ' bg-accent';
+  const activeRoute = activeRouteRaw
+    ? {
+        id: activeRouteRaw.id as string,
+        optimized_path: activeRouteRaw.optimized_path as OptimizedPath | null,
       }
+    : null;
 
-      el.textContent = (index + 1).toString();
+  // Available vehicles in driver's municipality (ACTIVE only — for session activation)
+  const { data: availableVehiclesRaw } = await supabase
+    .from('vehicles')
+    .select('id, plate_number, capacity_volume')
+    .eq('municipality_id', profile.municipality_id)
+    .eq('status', 'ACTIVE');
 
-      const popup = new maplibregl.Popup({ offset: 25 }).setHTML(
-        `<div class="bg-card text-foreground p-3 rounded">
-          <p class="font-semibold">${stop.address}</p>
-          <p class="text-sm text-muted-foreground">${stop.contact}</p>
-        </div>`
-      );
+  const availableVehicles = (availableVehiclesRaw ?? []) as {
+    id: string;
+    plate_number: string;
+    capacity_volume: number;
+  }[];
 
-      new maplibregl.Marker(el)
-        .setLngLat([stop.lng, stop.lat])
-        .setPopup(popup)
-        .addTo(map.current!);
+  // Current driver session (for vehicle + last known location)
+  const { data: sessionRaw } = await supabase
+    .from('driver_sessions')
+    .select(
+      `id, status, current_lat, current_lng,
+       vehicles ( plate_number, capacity_volume )`
+    )
+    .eq('driver_id', user.id)
+    .in('status', ['ON_DUTY', 'ON_ROUTE'])
+    .order('started_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
-      el.addEventListener('click', () => setSelectedStop(stop));
-    });
-
-    // Draw route line (simplified)
-    if (routeData.stops.length > 1) {
-      const coordinates = routeData.stops.map((stop) => [stop.lng, stop.lat]);
-
-      map.current.on('load', () => {
-        if (!map.current) return;
-
-        map.current.addSource('route', {
-          type: 'geojson',
-          data: {
-            type: 'Feature',
-            properties: {},
-            geometry: {
-              type: 'LineString',
-              coordinates: coordinates,
-            },
-          },
-        });
-
-        map.current.addLayer({
-          id: 'route',
-          type: 'line',
-          source: 'route',
-          paint: {
-            'line-color': '#22c55e',
-            'line-width': 4,
-          },
-        });
-      });
-    }
-
-    return () => {
-      map.current?.remove();
-    };
-  }, [routeData]);
-
-  const currentStop = selectedStop || routeData.stops[0];
+  const driverSession: DriverSession = sessionRaw
+    ? {
+        id: sessionRaw.id as string,
+        status: sessionRaw.status as string,
+        current_lat: sessionRaw.current_lat as number | null,
+        current_lng: sessionRaw.current_lng as number | null,
+        vehicles: Array.isArray(sessionRaw.vehicles)
+          ? (sessionRaw.vehicles[0] ?? null)
+          : sessionRaw.vehicles
+            ? {
+                plate_number: (sessionRaw.vehicles as { plate_number: string; capacity_volume: number }).plate_number,
+                capacity_volume: (sessionRaw.vehicles as { plate_number: string; capacity_volume: number }).capacity_volume,
+              }
+            : null,
+      }
+    : null;
 
   return (
     <div className="flex h-screen bg-background text-foreground overflow-hidden">
