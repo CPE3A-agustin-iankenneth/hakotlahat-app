@@ -129,7 +129,9 @@ export function RequestsContent({
         <div className="flex items-start text-muted-foreground mb-4">
           <MapPin className="w-4 h-4 mr-2 mt-1 flex-shrink-0" />
           <p className="text-sm font-medium leading-snug">
-            {request.lat.toFixed(4)}°N, {request.lng.toFixed(4)}°E
+            {typeof request.lat === 'number' && typeof request.lng === 'number'
+              ? `${request.lat.toFixed(4)}°N, ${request.lng.toFixed(4)}°E`
+              : "Location not available"}
           </p>
         </div>
 
