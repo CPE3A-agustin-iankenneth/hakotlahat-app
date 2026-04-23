@@ -46,17 +46,62 @@ export async function updateSession(request: NextRequest) {
   // with the Supabase client, your users may be randomly logged out.
   const { data } = await supabase.auth.getClaims();
   const user = data?.claims;
+  const pathname = request.nextUrl.pathname;
 
+  // ─── Unauthenticated redirect ─────────────────────────────────────────────
   if (
-    request.nextUrl.pathname !== "/" &&
+    pathname !== "/" &&
     !user &&
-    !request.nextUrl.pathname.startsWith("/login") &&
-    !request.nextUrl.pathname.startsWith("/auth")
+    !pathname.startsWith("/login") &&
+    !pathname.startsWith("/auth")
   ) {
-    // no user, potentially respond by redirecting the user to the login page
+    // no user — redirect to the login page
     const url = request.nextUrl.clone();
     url.pathname = "/auth/login";
     return NextResponse.redirect(url);
+  }
+
+  // ─── Role-based route protection ──────────────────────────────────────────
+  const ROLE_ROUTES: Record<string, string> = {
+    "/drv": "driver",
+    "/res": "resident",
+    "/admin": "admin",
+  };
+
+  const ROLE_HOME: Record<string, string> = {
+    driver: "/drv",
+    resident: "/res",
+    admin: "/admin",
+  };
+
+  const matchedPrefix = Object.keys(ROLE_ROUTES).find((prefix) =>
+    pathname.startsWith(prefix),
+  );
+
+  if (matchedPrefix && user) {
+    const requiredRole = ROLE_ROUTES[matchedPrefix];
+
+    // Fetch the user's profile (role + onboarding status) from the DB.
+    // This is the only DB call in the proxy — kept minimal (2 columns).
+    const { data: profile } = await supabase
+      .from("users")
+      .select("role, has_onboarded")
+      .eq("id", user.sub)
+      .single();
+
+    if (!profile || !profile.has_onboarded) {
+      // No profile yet or not fully onboarded — send to onboarding
+      const url = request.nextUrl.clone();
+      url.pathname = "/onboarding";
+      return NextResponse.redirect(url);
+    }
+
+    if (profile.role !== requiredRole) {
+      // Wrong section for this role — redirect to the user's correct home
+      const url = request.nextUrl.clone();
+      url.pathname = ROLE_HOME[profile.role] ?? "/auth/login";
+      return NextResponse.redirect(url);
+    }
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is.

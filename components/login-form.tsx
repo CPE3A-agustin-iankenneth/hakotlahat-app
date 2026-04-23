@@ -50,7 +50,12 @@ export function LoginForm({
       if (!profile?.has_onboarded) {
         router.push("/onboarding");
       } else {
-        router.push(profile.role === "driver" ? "/drv" : "/res");
+        const roleHome: Record<string, string> = {
+          driver: "/drv",
+          resident: "/res",
+          admin: "/admin",
+        };
+        router.push(roleHome[profile.role] ?? "/res");
       }
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
