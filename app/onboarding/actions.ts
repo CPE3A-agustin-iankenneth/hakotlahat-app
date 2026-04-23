@@ -10,9 +10,9 @@ export async function completeOnboarding(data: {
   home_lat: number | null;
   home_lng: number | null;
   home_address: string | null;
+  municipality_id?: string | null;
   plate_number?: string;
   capacity_volume?: number;
-  municipality_id?: string | null;
 }) {
   const supabase = await createClient();
   const {
@@ -21,7 +21,7 @@ export async function completeOnboarding(data: {
 
   if (!user) redirect("/auth/login");
 
-  // Start a transaction-like flow: update user first, then create vehicle if driver
+  // Update user record with municipality_id for both residents and drivers
   const { error: userError } = await supabase.from("users").upsert({
     id: user.id,
     email: user.email!,
@@ -32,7 +32,7 @@ export async function completeOnboarding(data: {
     home_lng: data.home_lng,
     home_address: data.home_address,
     has_onboarded: true,
-    municipality_id: data.role === "driver" ? data.municipality_id : null,
+    municipality_id: data.municipality_id,
   });
 
   if (userError) throw new Error(userError.message);
@@ -51,4 +51,5 @@ export async function completeOnboarding(data: {
 
   redirect(data.role === "driver" ? "/drv" : "/res");
 }
+
 
