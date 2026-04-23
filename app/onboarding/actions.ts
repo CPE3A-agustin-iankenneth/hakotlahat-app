@@ -10,6 +10,9 @@ export async function completeOnboarding(data: {
   home_lat: number | null;
   home_lng: number | null;
   home_address: string | null;
+  plate_number?: string;
+  capacity_volume?: number;
+  municipality_id?: string | null;
 }) {
   const supabase = await createClient();
   const {
@@ -18,7 +21,8 @@ export async function completeOnboarding(data: {
 
   if (!user) redirect("/auth/login");
 
-  const { error } = await supabase.from("users").upsert({
+  // Start a transaction-like flow: update user first, then create vehicle if driver
+  const { error: userError } = await supabase.from("users").upsert({
     id: user.id,
     email: user.email!,
     role: data.role,
@@ -28,9 +32,23 @@ export async function completeOnboarding(data: {
     home_lng: data.home_lng,
     home_address: data.home_address,
     has_onboarded: true,
+    municipality_id: data.role === "driver" ? data.municipality_id : null,
   });
 
-  if (error) throw new Error(error.message);
+  if (userError) throw new Error(userError.message);
+
+  // If driver, create vehicle record
+  if (data.role === "driver" && data.plate_number && data.capacity_volume && data.municipality_id) {
+    const { error: vehicleError } = await supabase.from("vehicles").insert({
+      municipality_id: data.municipality_id,
+      plate_number: data.plate_number,
+      capacity_volume: data.capacity_volume,
+      status: "ACTIVE",
+    });
+
+    if (vehicleError) throw new Error(`Vehicle creation failed: ${vehicleError.message}`);
+  }
 
   redirect(data.role === "driver" ? "/drv" : "/res");
 }
+
