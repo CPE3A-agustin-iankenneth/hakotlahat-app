@@ -3,6 +3,7 @@ import {
   ResidentBottomNav,
   ResidentMobileHeader,
 } from "@/components/nav/resident-mobile-nav";
+import { Toaster } from "@/components/ui/sonner";
 
 export default function ResidentLayout({
   children,
@@ -34,6 +35,7 @@ export default function ResidentLayout({
           <ResidentBottomNav />
         </div>
       </div>
+      <Toaster />
     </div>
   );
 }

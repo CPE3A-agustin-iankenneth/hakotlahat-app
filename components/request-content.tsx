@@ -5,15 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, MapPin, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { createClient } from "@/lib/supabase/client";
+import { uploadImage } from "@/lib/upload-image";
 import { RequestPickupModal, RequestPickupData } from "@/components/pickup-request-modal";
 
 interface PickupRequest {
   id: string;
   resident_id: string;
-  lat: number;
-  lng: number;
+  latitude: number;
+  longitude: number;
   image_url: string | null;
   status: "pending" | "scheduled" | "collected";
   priority_score: number;
@@ -52,27 +54,59 @@ export function RequestsContent({
     setIsDeleting(null);
   };
   const handleSubmitRequest = async (data: RequestPickupData) => {
-  const supabase = createClient();
-  
-  // Create the pickup request in Supabase
-  const { data: newRequest, error } = await supabase
-    .from("pickup_requests")
-    .insert({
-      resident_id: "user_id", // Get from auth context
-      category: data.category,
-      volume_estimate: data.estimatedVolume,
-      // Add other fields as needed
-      status: "pending",
-      priority_score: 1, // Or calculate from data
-      lat: 0, lng: 0, // Get from map/location
-    })
-    .select()
-    .single();
+    const supabase = createClient();
 
-  if (!error && newRequest) {
-    setActive([...active, newRequest as PickupRequest]);
-  }
-};
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      toast.error("You must be logged in to submit a request.");
+      return;
+    }
+
+    const { data: profile } = await supabase
+      .from("users")
+      .select("home_lat, home_lng")
+      .eq("id", user.id)
+      .single();
+
+    let imageUrl: string | null = null;
+    if (data.imageFile) {
+      try {
+        const ext = data.imageFile.name.split(".").pop() ?? "jpg";
+        imageUrl = await uploadImage(
+          data.imageFile,
+          "pickup-images",
+          `${user.id}/${Date.now()}.${ext}`
+        );
+      } catch (err) {
+        toast.error("Image upload failed — request will be submitted without photo.");
+        console.error("Image upload failed:", err);
+      }
+    }
+
+    const { data: newRequest, error } = await supabase
+      .from("pickup_requests")
+      .insert({
+        resident_id: user.id,
+        latitude: profile?.home_lat ?? 0,
+        longitude: profile?.home_lng ?? 0,
+        image_url: imageUrl,
+        status: "pending",
+        priority_score: data.priorityScore ?? 1,
+        volume_estimate: data.estimatedVolume ?? null,
+        category: data.category,
+        created_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (!error && newRequest) {
+      setActive([newRequest as PickupRequest, ...active]);
+      toast.success("Pickup request submitted successfully.");
+    } else if (error) {
+      toast.error(`Failed to submit request: ${error.message}`);
+      console.error("Failed to submit pickup request:", error);
+    }
+  };
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   
@@ -157,8 +191,8 @@ export function RequestsContent({
         <div className="flex items-start text-muted-foreground mb-4">
           <MapPin className="w-4 h-4 mr-2 mt-1 flex-shrink-0" />
           <p className="text-sm font-medium leading-snug">
-            {typeof request.lat === 'number' && typeof request.lng === 'number'
-              ? `${request.lat.toFixed(4)}°N, ${request.lng.toFixed(4)}°E`
+            {typeof request.latitude === 'number' && typeof request.longitude === 'number'
+              ? `${request.latitude.toFixed(4)}°N, ${request.longitude.toFixed(4)}°E`
               : "Location not available"}
           </p>
         </div>
