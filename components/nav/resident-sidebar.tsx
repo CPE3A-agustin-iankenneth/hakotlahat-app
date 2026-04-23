@@ -38,7 +38,10 @@ export function ResidentSidebar() {
       {/* Nav */}
       <nav className="flex flex-1 flex-col gap-1 pr-4">
         {navItems.map(({ href, label, icon: Icon }) => {
-          const isActive = pathname === href || pathname.startsWith(href + "/");
+          const isActive =
+            href === "/res"
+              ? pathname === "/res"
+              : pathname === href || pathname.startsWith(href + "/");
           return (
             <Link
               key={href}
@@ -47,7 +50,7 @@ export function ResidentSidebar() {
                 "flex items-center gap-3 rounded-r-full px-6 py-3 text-sm font-medium transition-colors",
                 isActive
                   ? "bg-sidebar-accent text-sidebar-primary"
-                  : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+                  : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
               )}
             >
               <Icon className="h-[18px] w-[18px] shrink-0" />

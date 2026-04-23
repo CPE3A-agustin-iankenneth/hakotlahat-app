@@ -29,7 +29,11 @@ export function ResidentMobileHeader() {
         </div>
         <span className="text-sm font-bold text-foreground">HakotLahat</span>
       </div>
-      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 text-muted-foreground"
+      >
         <CircleUserRound className="h-5 w-5" />
         <span className="sr-only">Account</span>
       </Button>
@@ -43,7 +47,10 @@ export function ResidentBottomNav() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around rounded-t-3xl border-t border-border/15 bg-white px-2 pb-6 pt-3 shadow-[0px_-4px_20px_0px_rgba(26,28,28,0.06)]">
       {navItems.map(({ href, label, icon: Icon }) => {
-        const isActive = pathname === href || pathname.startsWith(href + "/");
+        const isActive =
+          href === "/res"
+            ? pathname === "/res"
+            : pathname === href || pathname.startsWith(href + "/");
         return (
           <Link
             key={href}
@@ -52,7 +59,7 @@ export function ResidentBottomNav() {
               "flex flex-col items-center gap-1 rounded-full px-4 py-1 transition-colors",
               isActive
                 ? "bg-primary/15 text-primary"
-                : "text-muted-foreground hover:text-foreground"
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
             <Icon className="h-[18px] w-[18px] shrink-0" />
