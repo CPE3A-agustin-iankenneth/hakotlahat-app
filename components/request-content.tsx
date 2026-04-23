@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, MapPin, Trash2 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { createClient } from "@/lib/supabase/client";
+import { RequestPickupModal, RequestPickupData } from "@/components/pickup-request-modal";
 
 interface PickupRequest {
   id: string;
@@ -50,6 +51,31 @@ export function RequestsContent({
     }
     setIsDeleting(null);
   };
+  const handleSubmitRequest = async (data: RequestPickupData) => {
+  const supabase = createClient();
+  
+  // Create the pickup request in Supabase
+  const { data: newRequest, error } = await supabase
+    .from("pickup_requests")
+    .insert({
+      resident_id: "user_id", // Get from auth context
+      category: data.category,
+      volume_estimate: data.estimatedVolume,
+      // Add other fields as needed
+      status: "pending",
+      priority_score: 1, // Or calculate from data
+      lat: 0, lng: 0, // Get from map/location
+    })
+    .select()
+    .single();
+
+  if (!error && newRequest) {
+    setActive([...active, newRequest as PickupRequest]);
+  }
+};
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  
 
   const formatDate = (dateString: string): string => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -59,7 +85,9 @@ export function RequestsContent({
     });
   };
 
-  const getStatusBadge = (status: string): "secondary" | "default" | "outline" => {
+  const getStatusBadge = (
+    status: string,
+  ): "secondary" | "default" | "outline" => {
     const variants: Record<string, "secondary" | "default" | "outline"> = {
       pending: "secondary",
       scheduled: "default",
@@ -163,7 +191,10 @@ export function RequestsContent({
           <h1 className="text-4xl font-bold font-Roboto">Your Requests</h1>
           <p>Manage and track your active waste collection requests.</p>
         </div>
-        <Button className="bg-primary hover:bg-primary/90 rounded-full">
+        <Button
+          className="bg-primary hover:bg-primary/90 rounded-full"
+          onClick={() => setIsModalOpen(true)}
+        >
           <Plus className="w-5 h-5" />
           New Request
         </Button>
@@ -214,6 +245,11 @@ export function RequestsContent({
           </TabsContent>
         </Tabs>
       </div>
+      <RequestPickupModal 
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        onSubmit={handleSubmitRequest}
+      />
     </div>
   );
 }
