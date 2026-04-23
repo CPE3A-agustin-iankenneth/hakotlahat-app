@@ -307,11 +307,10 @@ export default function RoutePage() {
                     key={stop.id}
                     variant="ghost"
                     onClick={() => setSelectedStop(stop)}
-                    className={`w-full h-auto justify-start text-left p-3 rounded-lg transition-colors ${
-                      selectedStop?.id === stop.id
+                    className={`w-full h-auto justify-start text-left p-3 rounded-lg transition-colors ${selectedStop?.id === stop.id
                         ? 'bg-primary/20 border border-primary'
                         : 'bg-muted/50 hover:bg-muted-foreground/30'
-                    }`}
+                      }`}
                   >
                     <p className="text-sm font-medium">
                       Stop {index + 1}: {stop.address}
@@ -330,11 +329,10 @@ export default function RoutePage() {
         <div className="sticky bottom-0 bg-card/95 backdrop-blur border-t border-border p-6">
           <Button
             onClick={() => setIsRouteStarted(!isRouteStarted)}
-            className={`w-full py-6 text-lg font-bold transition-all ${
-              isRouteStarted
+            className={`w-full py-6 text-lg font-bold transition-all ${isRouteStarted
                 ? 'bg-muted-foreground/20 hover:bg-gray-600'
                 : 'bg-primary hover:bg-primary text-foreground'
-            }`}
+              }`}
           >
             {isRouteStarted ? 'ROUTE ACTIVE' : 'START ROUTE'}
             {isRouteStarted ? '' : ' →'}
