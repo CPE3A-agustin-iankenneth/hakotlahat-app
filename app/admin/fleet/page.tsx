@@ -14,12 +14,12 @@ export default async function AdminFleetPage() {
 
   const { data: profile } = await supabase
     .from("users")
-    .select("role")
+    .select("role, municipality_id")
     .eq("id", user.id)
     .single();
   if (profile?.role !== "admin") redirect("/auth/login");
 
-  const [{ data: drivers }, { data: activeSessions }, { data: vehicles }] =
+  const [{ data: drivers }, { data: activeSessions }, { data: vehicles }, { data: pendingRequestsRaw }] =
     await Promise.all([
       supabase
         .from("users")
@@ -40,6 +40,10 @@ export default async function AdminFleetPage() {
         .from("vehicles")
         .select("*")
         .order("plate_number"),
+      supabase
+        .from("pickup_requests")
+        .select("id, latitude, longitude, category, priority_score, status, users!resident_id(municipality_id)")
+        .in("status", ["pending", "scheduled"]),
     ]);
 
   // Merge active sessions into driver records
@@ -55,10 +59,26 @@ export default async function AdminFleetPage() {
     activeSession: (sessionMap.get(d.id) as unknown as DriverWithSession["activeSession"]) ?? null,
   }));
 
+  // Filter requests to this municipality
+  type RawRequest = { id: string; latitude: number; longitude: number; category: string | null; priority_score: number; status: string; users: { municipality_id: string } | { municipality_id: string }[] | null };
+  const municipalRequests = ((pendingRequestsRaw ?? []) as unknown as RawRequest[]).filter((r) => {
+    const munId = Array.isArray(r.users) ? r.users[0]?.municipality_id : r.users?.municipality_id;
+    return munId === profile?.municipality_id;
+  }).map((r) => ({
+    id: r.id,
+    latitude: r.latitude,
+    longitude: r.longitude,
+    category: r.category,
+    priority_score: r.priority_score,
+    status: r.status,
+  }));
+
   return (
     <AdminFleetContent
       drivers={driversWithSessions}
       vehicles={(vehicles as unknown as MunVehicle[]) ?? []}
+      municipalityId={profile?.municipality_id ?? null}
+      pendingRequests={municipalRequests}
     />
   );
 }

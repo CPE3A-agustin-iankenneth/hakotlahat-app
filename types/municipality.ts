@@ -34,8 +34,8 @@ export interface MunDriverSession {
 export interface MunPickupRequest {
   id: string;
   resident_id: string;
-  lat: number;
-  lng: number;
+  latitude: number;
+  longitude: number;
   image_url: string | null;
   status: RequestStatus;
   priority_score: number;

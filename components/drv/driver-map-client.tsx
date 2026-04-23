@@ -216,6 +216,23 @@ export function DriverMapClient({
     }
   }
 
+  async function goOffDuty() {
+    if (sessionIdRef.current) {
+      await supabase.current
+        .from('driver_sessions')
+        .update({ status: 'OFF_DUTY', ended_at: new Date().toISOString() })
+        .eq('id', sessionIdRef.current);
+    }
+    sessionIdRef.current = null;
+    setSessionId(null);
+    setSessionStatus('OFF_DUTY');
+    setIsRouteActive(false);
+    setCurrentRoute(null);
+    setRouteStops([]);
+    setCollectedIds([]);
+    toast.success('Shift ended. See you next time!');
+  }
+
   async function optimizeRoute() {
     if (!driverLocation) {
       toast.error('GPS location required to optimize route');
@@ -249,6 +266,7 @@ export function DriverMapClient({
       const data = await res.json() as {
         routeId?: string;
         stops?: RouteStop[];
+        coordinates?: [number, number][];
         totalDuration?: number;
         totalDistance?: number;
         error?: string;
@@ -266,7 +284,7 @@ export function DriverMapClient({
       const newRoute: ActiveRoute = {
         id: data.routeId!,
         optimized_path: {
-          coordinates: [],
+          coordinates: data.coordinates ?? [],
           stops: data.stops,
           totalDuration: data.totalDuration,
           totalDistance: data.totalDistance,
@@ -291,15 +309,6 @@ export function DriverMapClient({
         toast.warning(`${data.unassignedCount} requests couldn't fit in vehicle capacity`);
       }
 
-      // Start route automatically
-      if (!isRouteActive && sessionIdRef.current) {
-        setIsRouteActive(true);
-        setSessionStatus('ON_ROUTE');
-        await supabase.current
-          .from('driver_sessions')
-          .update({ status: 'ON_ROUTE' })
-          .eq('id', sessionIdRef.current);
-      }
     } catch {
       toast.error('Network error — please try again');
     } finally {
@@ -371,6 +380,8 @@ export function DriverMapClient({
 
   const routeSummary = currentRoute?.optimized_path;
   const pendingCount = localRequests.filter(r => r.status === 'pending').length;
+  const remainingStops = routeStops.filter(s => !collectedIds.includes(s.requestId)).length;
+  const noPendingCollections = pendingCount === 0 && remainingStops === 0;
 
   const visibleRequests = localRequests.filter(r => r.status !== 'collected');
 
@@ -576,58 +587,70 @@ export function DriverMapClient({
       <div className="w-96 bg-card border-l border-border overflow-y-auto flex flex-col">
         {/* Header */}
         <div className="sticky top-0 bg-card/95 backdrop-blur border-b border-border p-6 z-20">
-          <div className="flex justify-between items-start gap-3">
-            <div className="min-w-0">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                {selectedRequest ? (
-                  selectedStopOrder
-                    ? `Stop #${selectedStopOrder} of ${routeStops.length}`
-                    : 'Selected Pickup'
-                ) : 'No pickup selected'}
+          {noPendingCollections ? (
+            <div className="flex flex-col items-center justify-center py-2 text-center gap-2">
+              <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+              <p className="font-bold text-lg">All clear!</p>
+              <p className="text-xs text-muted-foreground">
+                No pending collections in your area right now.
               </p>
-              {selectedRequest ? (
-                <h2 className="text-2xl font-bold mt-2 truncate">
-                  {selectedRequest.category}
-                </h2>
-              ) : (
-                <p className="text-muted-foreground mt-2">Click a node on the map</p>
-              )}
             </div>
-            {selectedRequest && (
-              <Badge
-                className={cn(
-                  'shrink-0 rounded capitalize',
-                  isSelectedCollected
-                    ? 'bg-stone-500/20 text-stone-400 hover:bg-stone-500/20'
-                    : selectedRequest.status === 'pending'
-                      ? 'bg-amber-400/20 text-amber-400 hover:bg-amber-400/20'
-                      : 'bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500/20'
+          ) : (
+            <>
+              <div className="flex justify-between items-start gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                    {selectedRequest ? (
+                      selectedStopOrder
+                        ? `Stop #${selectedStopOrder} of ${routeStops.length}`
+                        : 'Selected Pickup'
+                    ) : 'No pickup selected'}
+                  </p>
+                  {selectedRequest ? (
+                    <h2 className="text-2xl font-bold mt-2 truncate">
+                      {selectedRequest.category}
+                    </h2>
+                  ) : (
+                    <p className="text-muted-foreground mt-2">Click a node on the map</p>
+                  )}
+                </div>
+                {selectedRequest && (
+                  <Badge
+                    className={cn(
+                      'shrink-0 rounded capitalize',
+                      isSelectedCollected
+                        ? 'bg-stone-500/20 text-stone-400 hover:bg-stone-500/20'
+                        : selectedRequest.status === 'pending'
+                          ? 'bg-amber-400/20 text-amber-400 hover:bg-amber-400/20'
+                          : 'bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500/20'
+                    )}
+                  >
+                    {isSelectedCollected ? 'collected' : selectedRequest.status}
+                  </Badge>
                 )}
-              >
-                {isSelectedCollected ? 'collected' : selectedRequest.status}
-              </Badge>
-            )}
-          </div>
+              </div>
 
-          {/* Route summary strip */}
-          {routeSummary?.totalDuration && routeSummary?.totalDistance && (
-            <div className="mt-3 flex gap-4 text-xs text-muted-foreground border-t border-border pt-3">
-              <span>
-                <span className="font-semibold text-foreground">
-                  {formatDuration(routeSummary.totalDuration)}
-                </span>{' '}
-                total
-              </span>
-              <span>
-                <span className="font-semibold text-foreground">
-                  {formatDistance(routeSummary.totalDistance)}
-                </span>{' '}
-                distance
-              </span>
-              <span>
-                <span className="font-semibold text-foreground">{routeStops.length}</span> stops
-              </span>
-            </div>
+              {/* Route summary strip */}
+              {routeSummary?.totalDuration && routeSummary?.totalDistance && (
+                <div className="mt-3 flex gap-4 text-xs text-muted-foreground border-t border-border pt-3">
+                  <span>
+                    <span className="font-semibold text-foreground">
+                      {formatDuration(routeSummary.totalDuration)}
+                    </span>{' '}
+                    total
+                  </span>
+                  <span>
+                    <span className="font-semibold text-foreground">
+                      {formatDistance(routeSummary.totalDistance)}
+                    </span>{' '}
+                    distance
+                  </span>
+                  <span>
+                    <span className="font-semibold text-foreground">{routeStops.length}</span> stops
+                  </span>
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -817,8 +840,8 @@ export function DriverMapClient({
 
         {/* Bottom Actions */}
         <div className="sticky bottom-0 bg-card/95 backdrop-blur border-t border-border p-6 space-y-3">
-          {/* Optimize Route button — shown when there are pending requests and no active route */}
-          {pendingCount > 0 && routeStops.length === 0 && (
+          {/* Optimize Route button — shown whenever there are pending requests */}
+          {pendingCount > 0 && (
             <Button
               onClick={optimizeRoute}
               disabled={isOptimizing || !driverLocation || !driverSession}
@@ -832,7 +855,9 @@ export function DriverMapClient({
               ) : (
                 <>
                   <Route className="w-4 h-4 mr-2" />
-                  OPTIMIZE ROUTE ({pendingCount} stops)
+                  {routeStops.length > 0
+                    ? `RE-OPTIMIZE ROUTE (${pendingCount} new)`
+                    : `OPTIMIZE ROUTE (${pendingCount} stops)`}
                 </>
               )}
             </Button>
@@ -840,7 +865,7 @@ export function DriverMapClient({
 
           <Button
             onClick={toggleRoute}
-            disabled={!driverSession}
+            disabled={!driverSession || routeStops.length === 0}
             className={cn(
               'w-full py-6 text-lg font-bold transition-all',
               isRouteActive
@@ -851,12 +876,27 @@ export function DriverMapClient({
             {isRouteActive ? 'ROUTE ACTIVE' : 'START ROUTE →'}
           </Button>
 
+          {driverSession && (
+            <Button
+              onClick={goOffDuty}
+              variant="outline"
+              className="w-full text-sm text-muted-foreground hover:text-destructive hover:border-destructive"
+            >
+              End Shift
+            </Button>
+          )}
+
           {!driverSession && (
             <p className="text-xs text-muted-foreground text-center">
               No active driver session found
             </p>
           )}
-          {!driverLocation && driverSession && (
+          {routeStops.length === 0 && driverSession && pendingCount === 0 && (
+            <p className="text-xs text-muted-foreground text-center">
+              No route available — optimize once new requests arrive
+            </p>
+          )}
+          {routeStops.length === 0 && driverSession && pendingCount > 0 && !driverLocation && (
             <p className="text-xs text-muted-foreground text-center">
               Waiting for GPS to optimize route
             </p>

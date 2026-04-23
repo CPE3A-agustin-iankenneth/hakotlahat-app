@@ -256,6 +256,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     routeId: newRoute.id,
     stops: orderedStops,
+    coordinates: roadCoordinates,
     totalDuration: orsRoute.duration,
     totalDistance: orsRoute.distance,
     unassignedCount: optimizationData.unassigned?.length ?? 0,

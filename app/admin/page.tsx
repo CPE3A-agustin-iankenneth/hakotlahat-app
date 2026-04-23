@@ -55,7 +55,7 @@ export default async function AdminDashboardPage() {
     supabase
       .from("pickup_requests")
       .select(
-        `id, resident_id, lat, lng, image_url, status, priority_score,
+        `id, resident_id, latitude, longitude, image_url, status, priority_score,
          volume_estimate, category, created_at,
          resident:users!pickup_requests_resident_id_fkey(full_name, email)`
       )

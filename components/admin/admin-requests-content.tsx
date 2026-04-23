@@ -172,7 +172,7 @@ export function AdminRequestsContent({ requests }: Props) {
                             <div className="flex items-center gap-1 text-xs text-muted-foreground">
                               <MapPin className="h-3 w-3 shrink-0" />
                               <span>
-                                {req.lat.toFixed(4)}, {req.lng.toFixed(4)}
+                                {req.latitude.toFixed(4)}, {req.longitude.toFixed(4)}
                               </span>
                             </div>
 
