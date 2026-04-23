@@ -75,14 +75,7 @@ const Index = () => {
           return;
         }
 
-        // Fetch resident score from res_score table
-        const { data: resScoreData } = await supabase
-          .from("res_score")
-          .select("eco_points, total_recycled")
-          .eq("user_id", user.id)
-          .single();
-
-        // Fetch user's pickup requests (activity)
+        // Fetch user's pickup requests (activity) — source of truth for stats
         const { data: pickupData } = await supabase
           .from("pickup_requests")
           .select("id, category, status, created_at, volume_estimate")
@@ -113,10 +106,34 @@ const Index = () => {
           }),
         );
 
+        // Calculate stats from real data
+        const ecoCredits = activityItems.reduce((sum, item) => sum + item.points, 0);
+        const totalRecycledHistory = (pickupData || [])
+          .filter((p) => p.status === "collected")
+          .reduce((sum, p) => sum + Math.ceil((p.volume_estimate || 0) * 2.4), 0);
+        const totalRequests = (pickupData || []).length;
+
+        // Sync res_score table to match reality (fire-and-forget)
+        supabase
+          .from("res_score")
+          .upsert(
+            {
+              user_id: user.id,
+              eco_points: ecoCredits,
+              total_recycled: totalRecycledHistory,
+              total_requests: totalRequests,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "user_id" },
+          )
+          .then(({ error }) => {
+            if (error) console.error("[res_score sync]", error.message);
+          });
+
         // Map latest request to steps (only if from today)
         const latest = pickupData?.[0];
         const isToday = latest ? new Date(latest.created_at).toDateString() === new Date().toDateString() : false;
-        
+
         if (latest && isToday) {
           setLatestRequest(latest);
           const s = latest.status;
@@ -142,10 +159,7 @@ const Index = () => {
           setSteps([]);
         }
 
-        setStats({
-          totalRecycled: resScoreData?.total_recycled ?? 0,
-          ecoCredits: resScoreData?.eco_points ?? 0,
-        });
+        setStats({ totalRecycled: totalRecycledHistory, ecoCredits });
         setActivity(activityItems);
       } catch (error) {
         console.error("Failed to fetch user data:", error);
@@ -277,8 +291,30 @@ const Index = () => {
             : "Completed",
     }));
 
+    const ecoCredits = activityItems.reduce((sum, item) => sum + item.points, 0);
+    const totalRecycled = (pickupData || [])
+      .filter((p) => p.status === "collected")
+      .reduce((sum, p) => sum + Math.ceil((p.volume_estimate || 0) * 2.4), 0);
+    const totalRequests = (pickupData || []).length;
+
+    supabase
+      .from("res_score")
+      .upsert(
+        {
+          user_id: user.id,
+          eco_points: ecoCredits,
+          total_recycled: totalRecycled,
+          total_requests: totalRequests,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id" },
+      )
+      .then(({ error }) => {
+        if (error) console.error("[res_score sync]", error.message);
+      });
+
     setActivity(activityItems);
-    // Stats (eco_points / total_recycled) come from res_score and are updated server-side
+    setStats({ totalRecycled, ecoCredits });
   };
 
   // Removed advanceStep demo function

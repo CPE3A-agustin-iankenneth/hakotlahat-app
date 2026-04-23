@@ -224,7 +224,7 @@ export function ReportsContent({ userId }: ReportsContentProps) {
             .from("res_score")
             .select("total_recycled, eco_points, total_requests")
             .eq("user_id", userId)
-            .single();
+            .maybeSingle();
 
           if (scoreError) {
             console.error(
