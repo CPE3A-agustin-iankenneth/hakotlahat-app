@@ -4,9 +4,17 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, MapPin, Trash2 } from "lucide-react";
+import { Plus, MapPin, Trash2, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { createClient } from "@/lib/supabase/client";
 import { uploadImage } from "@/lib/upload-image";
 import {
@@ -32,6 +40,13 @@ interface RequestsContentProps {
   historyRequests: PickupRequest[];
 }
 
+const DetailRow = ({ label, value }: { label: string; value: string }) => (
+  <div className="flex justify-between gap-4">
+    <span className="text-muted-foreground">{label}</span>
+    <span className="font-medium text-right text-foreground">{value}</span>
+  </div>
+);
+
 export function RequestsContent({
   activeRequests,
   historyRequests,
@@ -39,6 +54,7 @@ export function RequestsContent({
   const [active, setActive] = useState<PickupRequest[]>(activeRequests);
   const [history, setHistory] = useState<PickupRequest[]>(historyRequests);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [detailRequest, setDetailRequest] = useState<PickupRequest | null>(null);
 
   const handleDelete = async (requestId: string) => {
     setIsDeleting(requestId);
@@ -138,8 +154,8 @@ export function RequestsContent({
   };
 
   const getPriorityLabel = (score: number): string => {
-    if (score >= 8) return "High Priority";
-    if (score >= 5) return "Medium Priority";
+    if (score >= 4) return "High Priority";
+    if (score >= 2) return "Medium Priority";
     return "Low Priority";
   };
 
@@ -199,7 +215,7 @@ export function RequestsContent({
           <MapPin className="w-4 h-4 mr-2 mt-1 flex-shrink-0" />
           <p className="text-sm font-medium leading-snug">
             {typeof request.latitude === "number" &&
-            typeof request.longitude === "number"
+              typeof request.longitude === "number"
               ? `${request.latitude.toFixed(4)}°N, ${request.longitude.toFixed(4)}°E`
               : "Location not available"}
           </p>
@@ -210,6 +226,7 @@ export function RequestsContent({
           <Button
             variant="outline"
             className="w-full rounded-full border-2 px-6 font-bold text-primary hover:bg-primary/10 sm:w-auto"
+            onClick={() => setDetailRequest(request)}
           >
             View Details
           </Button>
@@ -294,6 +311,84 @@ export function RequestsContent({
         onOpenChange={setIsModalOpen}
         onSubmit={handleSubmitRequest}
       />
+
+      {/* View Details Dialog */}
+      <Dialog
+        open={detailRequest !== null}
+        onOpenChange={(open) => {
+          if (!open) setDetailRequest(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-[560px] p-0 overflow-hidden">
+          {/* Header band — matches Step 3 of the pickup modal */}
+          <div className="bg-gradient-to-br from-primary to-secondary px-6 pt-6 pb-5 text-primary-foreground">
+            <DialogHeader className="space-y-1 text-left">
+              <div className="flex items-center gap-2 text-xs uppercase tracking-wider opacity-90">
+                <Sparkles className="w-3.5 h-3.5" />
+                Request Details
+              </div>
+              <DialogTitle className="text-2xl font-bold text-primary-foreground">
+                {detailRequest?.category || "Waste Collection"}
+              </DialogTitle>
+              <DialogDescription className="text-primary-foreground/80">
+                Submitted on {detailRequest ? formatDate(detailRequest.created_at) : ""}
+              </DialogDescription>
+            </DialogHeader>
+
+          </div>
+
+          {/* Body */}
+          <div className="px-6 py-5 min-h-[180px]">
+            {detailRequest && (
+              <div className="space-y-3">
+                <div className="rounded-xl border bg-card p-4 space-y-3 text-sm">
+                  <DetailRow
+                    label="Category"
+                    value={detailRequest.category || "—"}
+                  />
+                  <DetailRow
+                    label="Status"
+                    value={detailRequest.status.charAt(0).toUpperCase() + detailRequest.status.slice(1)}
+                  />
+                  <DetailRow
+                    label="AI Volume"
+                    value={
+                      detailRequest.volume_estimate
+                        ? `${parseFloat(detailRequest.volume_estimate).toFixed(2)} m³`
+                        : "Not scanned"
+                    }
+                  />
+                  <DetailRow
+                    label="Priority"
+                    value={
+                      detailRequest.priority_score
+                        ? `${getPriorityLabel(detailRequest.priority_score)} (${detailRequest.priority_score}/10)`
+                        : "Auto-assessed"
+                    }
+                  />
+                </div>
+                {detailRequest.volume_estimate && (
+                  <Badge className="bg-primary/15 text-primary hover:bg-primary/20">
+                    AI-classified waste
+                  </Badge>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <DialogFooter className="px-6 pb-6 pt-0">
+            <Button
+              variant="outline"
+              className="rounded-full"
+              onClick={() => setDetailRequest(null)}
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
