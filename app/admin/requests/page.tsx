@@ -1,11 +1,10 @@
-import { connection } from "next/server";
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AdminRequestsContent } from "@/components/admin/admin-requests-content";
 import type { MunPickupRequest } from "@/types/municipality";
 
-export default async function AdminRequestsPage() {
-  await connection();
+async function AdminRequestsPageContent() {
   const supabase = await createClient();
 
   const {
@@ -33,5 +32,13 @@ export default async function AdminRequestsPage() {
     <AdminRequestsContent
       requests={(allRequests as unknown as MunPickupRequest[]) ?? []}
     />
+  );
+}
+
+export default function AdminRequestsPage() {
+  return (
+    <Suspense fallback={null}>
+      <AdminRequestsPageContent />
+    </Suspense>
   );
 }

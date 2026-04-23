@@ -1,20 +1,17 @@
-import { connection } from "next/server";
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { RequestsContent } from "@/components/request-content";
 
-export default async function RequestPage() {
-  await connection();
+async function RequestPageContent() {
   const supabase = await createClient();
 
-  // Get current user (resident)
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) redirect("/auth/login");
 
-  // Fetch active requests (pending or scheduled)
   const { data: activeRequests, error: activeError } = await supabase
     .from("pickup_requests")
     .select("*")
@@ -22,7 +19,6 @@ export default async function RequestPage() {
     .in("status", ["pending", "scheduled"])
     .order("created_at", { ascending: false });
 
-  // Fetch history requests (collected)
   const { data: historyRequests, error: historyError } = await supabase
     .from("pickup_requests")
     .select("*")
@@ -40,5 +36,13 @@ export default async function RequestPage() {
       activeRequests={activeRequests || []}
       historyRequests={historyRequests || []}
     />
+  );
+}
+
+export default function RequestPage() {
+  return (
+    <Suspense fallback={null}>
+      <RequestPageContent />
+    </Suspense>
   );
 }

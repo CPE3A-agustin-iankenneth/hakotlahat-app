@@ -1,5 +1,4 @@
-import { connection } from "next/server";
-import * as React from "react";
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { WeatherAlertsClient } from "@/components/drv/weather-alerts-client";
@@ -124,8 +123,7 @@ export type WeatherSnapshot = {
   fetchedAt: string;
 };
 
-export default async function AlertsPage() {
-  await connection();
+async function AlertsPageContent() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -230,5 +228,13 @@ export default async function AlertsPage() {
       warnings={warnings}
       fetchError={fetchError}
     />
+  );
+}
+
+export default function AlertsPage() {
+  return (
+    <Suspense fallback={null}>
+      <AlertsPageContent />
+    </Suspense>
   );
 }

@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { connection } from "next/server";
 import {
   Truck,
   MapPin,
@@ -518,8 +517,7 @@ function CTA() {
   );
 }
 
-async function Footer() {
-  await connection();
+function Footer() {
   return (
     <footer className="border-t border-border bg-card">
       <div className="max-w-6xl mx-auto px-6 py-12">
@@ -553,7 +551,7 @@ async function Footer() {
         </div>
 
         <div className="mt-10 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
-          <p>© {new Date().getFullYear()} HakotLahat. All rights reserved.</p>
+          <p>© 2026 HakotLahat. All rights reserved.</p>
           <p>Built with Next.js &amp; Supabase</p>
         </div>
       </div>

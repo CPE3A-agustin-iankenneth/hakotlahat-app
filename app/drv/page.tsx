@@ -1,11 +1,10 @@
-import { connection } from 'next/server';
+import { Suspense } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { DriverMapClient } from '@/components/drv/driver-map-client';
 import type { PickupRequest, DriverSession, ActiveRoute } from '@/components/drv/driver-map-client';
 
-export default async function RoutePage() {
-  await connection();
+async function RoutePageContent() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -127,5 +126,13 @@ export default async function RoutePage() {
       driverSession={driverSession}
       availableVehicles={availableVehicles}
     />
+  );
+}
+
+export default function RoutePage() {
+  return (
+    <Suspense fallback={null}>
+      <RoutePageContent />
+    </Suspense>
   );
 }

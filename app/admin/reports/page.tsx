@@ -1,11 +1,10 @@
-import { connection } from "next/server";
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { BarChart3 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-export default async function MunReportsPage() {
-  await connection();
+async function MunReportsPageContent() {
   const supabase = await createClient();
 
   const {
@@ -36,5 +35,13 @@ export default async function MunReportsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function MunReportsPage() {
+  return (
+    <Suspense fallback={null}>
+      <MunReportsPageContent />
+    </Suspense>
   );
 }

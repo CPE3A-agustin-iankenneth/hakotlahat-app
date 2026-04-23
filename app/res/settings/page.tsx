@@ -1,4 +1,4 @@
-import { connection } from "next/server";
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Bell, LogOut } from "lucide-react";
@@ -7,8 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import PickupAddressCard from "@/components/pickup-address-card";
 
-export default async function SettingsPage() {
-  await connection();
+async function SettingsPageContent() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -111,5 +110,13 @@ export default async function SettingsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={null}>
+      <SettingsPageContent />
+    </Suspense>
   );
 }

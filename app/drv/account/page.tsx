@@ -1,10 +1,9 @@
-import { connection } from "next/server";
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { AccountContent } from "@/components/account-content";
 
-export default async function DriverAccountPage() {
-  await connection();
+async function DriverAccountPageContent() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -25,5 +24,13 @@ export default async function DriverAccountPage() {
       initialFullName={profile?.full_name ?? null}
       initialAvatarUrl={profile?.avatar_url ?? null}
     />
+  );
+}
+
+export default function DriverAccountPage() {
+  return (
+    <Suspense fallback={null}>
+      <DriverAccountPageContent />
+    </Suspense>
   );
 }

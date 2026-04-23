@@ -1,4 +1,4 @@
-import { connection } from "next/server";
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -15,8 +15,7 @@ interface LeaderboardEntry {
   isCurrentUser?: boolean;
 }
 
-export default async function DriverPointsPage() {
-  await connection();
+async function DriverPointsPageContent() {
   const supabase = await createClient();
 
   // Get current user
@@ -306,5 +305,13 @@ export default async function DriverPointsPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function DriverPointsPage() {
+  return (
+    <Suspense fallback={null}>
+      <DriverPointsPageContent />
+    </Suspense>
   );
 }
