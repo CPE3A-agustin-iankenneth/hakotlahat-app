@@ -75,11 +75,11 @@ const Index = () => {
           return;
         }
 
-        // Fetch user's total recycled
-        const { data: userData } = await supabase
-          .from("users")
-          .select("total_recycled")
-          .eq("id", user.id)
+        // Fetch resident score from res_score table
+        const { data: resScoreData } = await supabase
+          .from("res_score")
+          .select("eco_points, total_recycled")
+          .eq("user_id", user.id)
           .single();
 
         // Fetch user's pickup requests (activity)
@@ -113,19 +113,6 @@ const Index = () => {
           }),
         );
 
-        // Calculate eco credits and total recycled weight from history
-        const ecoCredits = activityItems.reduce(
-          (sum, item) => sum + item.points,
-          0,
-        );
-
-        const totalRecycledHistory = (pickupData || [])
-          .filter((p) => p.status === "collected")
-          .reduce(
-            (sum, p) => sum + Math.ceil((p.volume_estimate || 0) * 2.4),
-            0,
-          );
-
         // Map latest request to steps (only if from today)
         const latest = pickupData?.[0];
         const isToday = latest ? new Date(latest.created_at).toDateString() === new Date().toDateString() : false;
@@ -156,8 +143,8 @@ const Index = () => {
         }
 
         setStats({
-          totalRecycled: totalRecycledHistory || userData?.total_recycled || 0,
-          ecoCredits: ecoCredits,
+          totalRecycled: resScoreData?.total_recycled ?? 0,
+          ecoCredits: resScoreData?.eco_points ?? 0,
         });
         setActivity(activityItems);
       } catch (error) {
@@ -290,17 +277,8 @@ const Index = () => {
             : "Completed",
     }));
 
-    const ecoCredits = activityItems.reduce(
-      (sum, item) => sum + item.points,
-      0,
-    );
-
-    const totalRecycled = (pickupData || [])
-      .filter((p) => p.status === "collected")
-      .reduce((sum, p) => sum + Math.ceil((p.volume_estimate || 0) * 2.4), 0);
-
     setActivity(activityItems);
-    setStats({ totalRecycled, ecoCredits });
+    // Stats (eco_points / total_recycled) come from res_score and are updated server-side
   };
 
   // Removed advanceStep demo function
