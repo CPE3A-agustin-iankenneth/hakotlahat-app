@@ -340,6 +340,16 @@ export function DriverMapClient({
       );
       if (remaining.length === 0) {
         toast.success('All stops completed!');
+        setCurrentRoute(null);
+        setRouteStops([]);
+        setIsRouteActive(false);
+        setSessionStatus('ON_DUTY');
+        if (sessionIdRef.current) {
+          await supabase.current
+            .from('driver_sessions')
+            .update({ status: 'ON_DUTY' })
+            .eq('id', sessionIdRef.current);
+        }
       } else {
         toast.success('Marked as collected');
       }
