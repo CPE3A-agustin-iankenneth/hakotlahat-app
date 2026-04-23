@@ -4,6 +4,7 @@ import { useState, useRef, useTransition, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 import {
   Home,
   Truck,
@@ -25,15 +26,25 @@ import {
   MarkerContent,
   MapControls,
 } from "@/components/ui/map";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { MapViewport } from "@/components/ui/map";
-
-const TOTAL_STEPS = 4;
 
 type Role = "resident" | "driver";
 
 interface Props {
   userId: string;
   userEmail: string;
+}
+
+interface Municipality {
+  id: string;
+  name: string;
 }
 
 export default function OnboardingWizard({ userId, userEmail }: Props) {
@@ -47,13 +58,75 @@ export default function OnboardingWizard({ userId, userEmail }: Props) {
   }>({ lat: null, lng: null, address: "" });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+
+  // Driver-specific fields
+  const [plateNumber, setPlateNumber] = useState("");
+  const [capacityVolume, setCapacityVolume] = useState(100);
+  const [municipalityId, setMunicipalityId] = useState<string | null>(null);
+  const [municipalities, setMunicipalities] = useState<Municipality[]>([]);
+  const [isMunicipalitiesLoading, setIsMunicipalitiesLoading] = useState(false);
+
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Calculate total steps based on role
+  const getTotalSteps = (): number => {
+    if (role === "driver") return 4; // Role, Name, Vehicle Info, Photo (skip location)
+    return 4; // Role, Name, Location, Photo
+  };
+
+  const TOTAL_STEPS = getTotalSteps();
+
+  // Helper to get the actual step type for rendering
+  const getStepType = (stepNum: number): string => {
+    if (role === "driver") {
+      // Drivers: 1=Role, 2=Name, 3=Vehicle, 4=Photo
+      if (stepNum === 1) return "role";
+      if (stepNum === 2) return "name";
+      if (stepNum === 3) return "vehicle";
+      if (stepNum === 4) return "photo";
+    } else {
+      // Residents: 1=Role, 2=Name, 3=Location, 4=Photo
+      if (stepNum === 1) return "role";
+      if (stepNum === 2) return "name";
+      if (stepNum === 3) return "location";
+      if (stepNum === 4) return "photo";
+    }
+    return "";
+  };
+
+  // Fetch municipalities when role is selected as driver
+  useEffect(() => {
+    if (role === "driver" && municipalities.length === 0) {
+      setIsMunicipalitiesLoading(true);
+      fetch("/api/municipalities")
+        .then((res) => res.json())
+        .then((data) => {
+          setMunicipalities(data.municipalities || []);
+        })
+        .catch(() => {
+          setError("Failed to load municipalities");
+        })
+        .finally(() => {
+          setIsMunicipalitiesLoading(false);
+        });
+    }
+  }, [role, municipalities.length]);
+
   const canContinue = () => {
-    if (step === 1) return role !== null;
-    if (step === 2) return fullName.trim().length >= 2;
+    const stepType = getStepType(step);
+    if (stepType === "role") return role !== null;
+    if (stepType === "name") return fullName.trim().length >= 2;
+    if (stepType === "location") return true; // Location is optional
+    if (stepType === "vehicle") {
+      // Validate driver fields
+      return (
+        plateNumber.trim().length > 0 &&
+        capacityVolume > 0 &&
+        municipalityId !== null
+      );
+    }
     return true;
   };
 
@@ -93,6 +166,12 @@ export default function OnboardingWizard({ userId, userEmail }: Props) {
           home_lat: locationData.lat,
           home_lng: locationData.lng,
           home_address: locationData.address || null,
+          // Driver-specific fields
+          ...(role === "driver" && {
+            plate_number: plateNumber.trim(),
+            capacity_volume: capacityVolume,
+            municipality_id: municipalityId,
+          }),
         });
       } catch (err) {
         setError(err instanceof Error ? err.message : "Something went wrong");
@@ -127,19 +206,31 @@ export default function OnboardingWizard({ userId, userEmail }: Props) {
 
         {/* Step content */}
         <div className="flex-1 flex flex-col px-6 pb-8">
-          {step === 1 && (
+          {getStepType(step) === "role" && (
             <StepRole role={role} onSelect={setRole} email={userEmail} />
           )}
-          {step === 2 && (
+          {getStepType(step) === "name" && (
             <StepName value={fullName} onChange={setFullName} />
           )}
-          {step === 3 && (
+          {getStepType(step) === "location" && (
             <StepLocation
               locationData={locationData}
               onLocationChange={setLocationData}
             />
           )}
-          {step === 4 && (
+          {getStepType(step) === "vehicle" && (
+            <StepVehicleInfo
+              plateNumber={plateNumber}
+              onPlateNumberChange={setPlateNumber}
+              capacityVolume={capacityVolume}
+              onCapacityVolumeChange={setCapacityVolume}
+              municipalityId={municipalityId}
+              onMunicipalityIdChange={setMunicipalityId}
+              municipalities={municipalities}
+              isLoading={isMunicipalitiesLoading}
+            />
+          )}
+          {getStepType(step) === "photo" && (
             <StepPhoto
               preview={avatarPreview}
               fileInputRef={fileInputRef}
@@ -598,6 +689,126 @@ function StepPhoto({
         >
           {preview ? "Change photo" : "Upload photo"}
         </Button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Step 4 (Driver): Vehicle Info ──────────────────────────────────── */
+function StepVehicleInfo({
+  plateNumber,
+  onPlateNumberChange,
+  capacityVolume,
+  onCapacityVolumeChange,
+  municipalityId,
+  onMunicipalityIdChange,
+  municipalities,
+  isLoading,
+}: {
+  plateNumber: string;
+  onPlateNumberChange: (v: string) => void;
+  capacityVolume: number;
+  onCapacityVolumeChange: (v: number) => void;
+  municipalityId: string | null;
+  onMunicipalityIdChange: (v: string) => void;
+  municipalities: Municipality[];
+  isLoading: boolean;
+}) {
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          Vehicle Information
+        </h1>
+        <p className="text-muted-foreground mt-1">
+          Tell us about your vehicle and service area.
+        </p>
+      </div>
+
+      <div className="bg-card rounded-3xl p-5 flex flex-col gap-5">
+        {/* Plate Number */}
+        <div className="flex flex-col gap-3">
+          <Label htmlFor="plate-number" className="text-sm font-semibold">
+            Plate Number
+          </Label>
+          <Input
+            id="plate-number"
+            placeholder="e.g. ABC 1234"
+            value={plateNumber}
+            onChange={(e) => onPlateNumberChange(e.target.value)}
+            className="rounded-xl bg-muted border-0 h-12 text-base"
+            autoFocus
+          />
+          <p className="text-xs text-muted-foreground">
+            Vehicle registration plate number
+          </p>
+        </div>
+
+        {/* Capacity Volume */}
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="capacity" className="text-sm font-semibold">
+              Vehicle Capacity
+            </Label>
+            <span className="text-sm font-semibold text-primary">
+              {capacityVolume} m³
+            </span>
+          </div>
+          <div className="flex flex-col gap-3">
+            <Slider
+              id="capacity"
+              min={10}
+              max={500}
+              step={10}
+              value={[capacityVolume]}
+              onValueChange={(value) => onCapacityVolumeChange(value[0])}
+              className="w-full"
+            />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>10 m³</span>
+              <span>500 m³</span>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Estimated waste capacity in cubic meters
+          </p>
+        </div>
+
+        {/* Municipality */}
+        <div className="flex flex-col gap-3">
+          <Label htmlFor="municipality" className="text-sm font-semibold">
+            Service Municipality
+          </Label>
+          {isLoading ? (
+            <div className="h-12 rounded-xl bg-muted flex items-center justify-center">
+              <span className="text-sm text-muted-foreground">
+                Loading municipalities...
+              </span>
+            </div>
+          ) : (
+            <Select value={municipalityId || ""} onValueChange={onMunicipalityIdChange}>
+              <SelectTrigger className="rounded-xl bg-muted border-0 h-12 text-base">
+                <SelectValue placeholder="Select your service municipality" />
+              </SelectTrigger>
+              <SelectContent>
+                {municipalities.length === 0 ? (
+                  <div className="p-2 text-sm text-muted-foreground text-center">
+                    No municipalities available
+                  </div>
+                ) : (
+                  municipalities.map((mun) => (
+                    <SelectItem key={mun.id} value={mun.id}>
+                      {mun.name}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          )}
+          <p className="text-xs text-muted-foreground">
+            The municipality where you&apos;ll primarily operate
+          </p>
+        </div>
       </div>
     </div>
   );
