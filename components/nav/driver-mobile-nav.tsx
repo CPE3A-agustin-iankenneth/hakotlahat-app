@@ -50,7 +50,9 @@ export function DriverBottomNav() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around rounded-t-3xl border-t border-stone-800 bg-stone-950 px-2 pb-6 pt-3 shadow-[0px_-4px_20px_0px_rgba(0,0,0,0.4)]">
       {navItems.map(({ href, label, icon: Icon, badge }) => {
-        const isActive = pathname === href || pathname.startsWith(href + "/");
+        const isActive = href === "/drv"
+          ? pathname === href
+          : pathname === href || pathname.startsWith(href + "/");
         return (
           <Link
             key={href}
