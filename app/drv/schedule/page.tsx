@@ -72,9 +72,9 @@ export default async function SchedulePage() {
   const requestIds = stops.map((s) => s.requestId);
   const { data: requestStatuses } = requestIds.length > 0
     ? await supabase
-        .from("pickup_requests")
-        .select("id, status")
-        .in("id", requestIds)
+      .from("pickup_requests")
+      .select("id, status")
+      .in("id", requestIds)
     : { data: [] };
 
   const statusMap = new Map<string, string>(
@@ -148,18 +148,17 @@ export default async function SchedulePage() {
                 const isCurrent =
                   !isDone &&
                   stops.find((s) => statusMap.get(s.requestId) !== "collected")?.requestId ===
-                    stop.requestId;
+                  stop.requestId;
 
                 return (
                   <Card
                     key={stop.requestId}
-                    className={`relative rounded-xl border px-4 py-3 transition-colors ${
-                      isCurrent
-                        ? "border-primary/70 bg-card/90 shadow-md ring-1 ring-primary/25"
-                        : isDone
-                          ? "border-border bg-card/40 opacity-60"
-                          : "border-border bg-card/70"
-                    }`}
+                    className={`relative rounded-xl border px-4 py-3 transition-colors ${isCurrent
+                      ? "border-primary/70 bg-card/90 shadow-md ring-1 ring-primary/25"
+                      : isDone
+                        ? "border-border bg-card/40 opacity-60"
+                        : "border-border bg-card/70"
+                      }`}
                   >
                     <div className="flex items-center justify-between gap-4">
                       <div className="min-w-0">
@@ -170,11 +169,10 @@ export default async function SchedulePage() {
                           )}
                         </p>
                         <h2
-                          className={`truncate text-2xl font-extrabold tracking-tight ${
-                            isDone
-                              ? "text-muted-foreground/70 line-through"
-                              : "text-foreground"
-                          }`}
+                          className={`truncate text-2xl font-extrabold tracking-tight ${isDone
+                            ? "text-muted-foreground/70 line-through"
+                            : "text-foreground"
+                            }`}
                         >
                           {stop.category ?? "Unknown Category"}
                         </h2>
@@ -214,23 +212,6 @@ export default async function SchedulePage() {
               })}
             </div>
           )}
-
-          <Button
-            size="icon"
-            className="fixed bottom-28 right-6 z-30 h-14 w-14 rounded-full shadow-xl transition hover:brightness-110 md:bottom-6"
-            aria-label="Open map actions"
-          >
-            <Plus className="h-7 w-7" />
-          </Button>
-
-          <Button
-            variant="outline"
-            size="icon"
-            className="fixed right-6 z-30 h-11 w-11 rounded-full shadow-lg transition bottom-[11.5rem] md:bottom-24"
-            aria-label="Open stop map"
-          >
-            <MapPinned className="h-5 w-5" />
-          </Button>
         </div>
       </section>
     </div>
