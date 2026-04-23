@@ -2,15 +2,11 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Search,
-  Bell,
-  HelpCircle,
   PlusCircle,
   CheckCircle2,
   Circle,
   Leaf,
   Star,
-  ScanLine,
   ChevronRight,
   Package,
 } from "lucide-react";
@@ -22,34 +18,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { PickupRequestModal } from "@/components/pickup-request-modal";
-
-// ── Types (ready for DB integration) ──────────────────────────
-interface UserProfile {
-  name: string;
-  tier: string;
-  avatar?: string;
-}
+import { Toaster } from "@/components/ui/sonner";
+import { RequestPickupModal, RequestPickupData } from "@/components/pickup-request-modal";
 
 interface CollectionStep {
   label: string;
@@ -65,20 +38,6 @@ interface ActivityItem {
   points: number;
   status: "Completed" | "Pending" | "In Progress";
 }
-
-interface Notification {
-  id: string;
-  title: string;
-  detail: string;
-  time: string;
-  unread: boolean;
-}
-
-// ── Mock Data (swap with DB queries) ──────────────────────────
-const mockUser: UserProfile = {
-  name: "Elena Garcia",
-  tier: "Residential Tier 1",
-};
 
 const mockTicket = "#4920";
 
@@ -97,38 +56,15 @@ const initialActivity: ActivityItem[] = [
   { id: "3", category: "Plastics", type: "Scheduled Pickup", date: "Oct 18, 2023", points: 30, status: "Completed" },
 ];
 
-const initialNotifications: Notification[] = [
-  { id: "n1", title: "Route Scheduled", detail: "Your pickup is scheduled for today at 12:00 PM.", time: "2h ago", unread: true },
-  { id: "n2", title: "Eco Credits Earned", detail: "You earned 45 points from your last pickup.", time: "1d ago", unread: true },
-  { id: "n3", title: "New Tier Unlocked", detail: "You're now a Residential Tier 1 member!", time: "3d ago", unread: false },
-];
-
-// ── Animation Variants ───────────────────────────────────────
-const cardVariant = {
-  hidden: { opacity: 0, y: 20 },
-  visible: (i: number) => ({ opacity: 1, y: 0, transition: { delay: i * 0.08, duration: 0.4 } }),
-};
-
-// ── Component ─────────────────────────────────────────────────
 const Index = () => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [user] = useState<UserProfile>(mockUser);
-  const [steps, setSteps] = useState<CollectionStep[]>(initialSteps);
-  const [activity, setActivity] = useState<ActivityItem[]>(initialActivity);
+  const [steps, setSteps] = useState(initialSteps);
+  const [activity, setActivity] = useState(initialActivity);
   const [stats, setStats] = useState(initialStats);
-  const [notifications, setNotifications] = useState<Notification[]>(initialNotifications);
-
-  // UI State
   const [pickupOpen, setPickupOpen] = useState(false);
-  const [scanOpen, setScanOpen] = useState(false);
-  const [notifOpen, setNotifOpen] = useState(false);
-  const [helpOpen, setHelpOpen] = useState(false);
-  const [activityOpen, setActivityOpen] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState<ActivityItem | null>(null);
+  const [activityOpen, setActivityOpen] = useState(false);
 
-  const unreadCount = notifications.filter((n) => n.unread).length;
-
-  const handlePickupSubmit = (data: { category: string; date: string; notes: string }) => {
+  const handlePickupSubmit = (data: RequestPickupData) => {
     const newItem: ActivityItem = {
       id: Date.now().toString(),
       category: data.category,
@@ -139,9 +75,14 @@ const Index = () => {
     };
     setActivity([newItem, ...activity]);
     setSteps((prev) =>
-      prev.map((s, i) => (i === 0 ? { ...s, detail: `New request submitted at ${new Date().toLocaleTimeString()}`, completed: true } : s))
+      prev.map((s, i) =>
+        i === 0
+          ? { ...s, detail: `New request submitted at ${new Date().toLocaleTimeString()}`, completed: true }
+          : s
+      )
     );
-    toast.success(`Pickup requested — ${newItem.category} scheduled for ${newItem.date}.`);
+    const extra = data.estimatedVolume ? ` (AI volume: ${data.estimatedVolume})` : "";
+    toast.success(`Pickup requested — ${newItem.category} on ${newItem.date}${extra}.`);
   };
 
   const advanceStep = () => {
@@ -159,109 +100,61 @@ const Index = () => {
     }
   };
 
-  const handleScan = () => {
-    toast.success("AI scan complete — estimated volume: 1.2m³, Truck #08 assigned.");
-    setScanOpen(false);
-  };
-
-  const markAllRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
-    toast("All caught up — notifications marked as read.");
-  };
-
-  const filteredActivity = activity.filter(
-    (a) =>
-      !searchQuery ||
-      a.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      a.type.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <main className="max-w-6xl mx-auto px-6 py-8 space-y-6">
-        {/* Hero Row */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-          {/* Hero Card */}
-          <motion.div
-            custom={0}
-            variants={cardVariant}
-            initial="hidden"
-            animate="visible"
-            className="md:col-span-3 bg-card rounded-2xl border border-border overflow-hidden relative flex flex-col justify-between p-8 min-h-[280px]"
+      <Toaster />
+      <div className="max-w-7xl mx-auto px-6 py-10 space-y-8">
+        {/* Hero */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="rounded-3xl bg-gradient-to-br from-primary/15 via-primary/5 to-background border p-10"
+        >
+          <Badge className="bg-primary/15 text-primary hover:bg-primary/20 mb-4">
+            Next Collection: Today
+          </Badge>
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight max-w-2xl">
+            Clean streets start at your doorstep.
+          </h1>
+          <p className="text-muted-foreground mt-4 max-w-2xl text-lg">
+            Schedule a bulk waste pickup in seconds and track our eco-friendly disposal process in
+            real-time. Includes built-in AI volume estimation.
+          </p>
+          <Button
+            onClick={() => setPickupOpen(true)}
+            size="lg"
+            className="mt-6 rounded-full px-6 font-semibold"
           >
-            <span className="inline-block bg-primary text-primary-foreground text-xs font-bold tracking-widest uppercase px-3 py-1 rounded-full w-fit">
-              Next Collection: Today
-            </span>
-            <div className="mt-4 space-y-3 max-w-sm">
-              <h1 className="text-4xl font-extrabold leading-tight tracking-tight">
-                Clean streets start at your doorstep.
-              </h1>
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                Schedule a bulk waste pickup in seconds and track our eco-friendly disposal process in real-time.
-              </p>
-            </div>
-            <Button
-              onClick={() => setPickupOpen(true)}
-              className="mt-6 rounded-full px-6 py-6 font-semibold w-fit"
-            >
-              <PlusCircle size={18} />
-              Request New Pickup
-            </Button>
-          </motion.div>
+            <PlusCircle className="w-5 h-5" />
+            Request New Pickup
+          </Button>
+        </motion.div>
 
-          {/* AI Volume Check */}
+        {/* Stats */}
+        <div className="grid md:grid-cols-3 gap-6">
           <motion.div
-            custom={1}
-            variants={cardVariant}
-            initial="hidden"
-            animate="visible"
-            className="md:col-span-2 bg-primary text-primary-foreground rounded-2xl p-8 flex flex-col justify-between min-h-[280px]"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="md:col-span-1 rounded-2xl border bg-card p-6 space-y-4"
           >
-            <div className="w-10 h-10 rounded-lg bg-primary-foreground/20 flex items-center justify-center">
-              <ScanLine size={22} />
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold">Collection Status</h3>
+              <Badge variant="secondary">Ticket {mockTicket}</Badge>
             </div>
-            <div className="mt-4 space-y-2">
-              <h2 className="text-xl font-bold">AI Volume Check</h2>
-              <p className="text-sm opacity-80 leading-relaxed">
-                Not sure if your load fits? Snap a photo of your waste pile. Our AI will estimate the volume and assign the right vehicle.
-              </p>
-            </div>
-            <Button
-              variant="secondary"
-              onClick={() => setScanOpen(true)}
-              className="mt-6 rounded-xl px-6 py-6 font-semibold text-primary w-fit"
-            >
-              Scan Items Now
-            </Button>
-          </motion.div>
-        </div>
-
-        {/* Stats Row */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Collection Status */}
-          <motion.div
-            custom={2}
-            variants={cardVariant}
-            initial="hidden"
-            animate="visible"
-            className="bg-card rounded-2xl border border-border p-6"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold">Collection Status</h3>
-              <span className="text-sm text-muted-foreground font-medium">Ticket {mockTicket}</span>
-            </div>
-            <div className="space-y-4">
-              {steps.map((step, i) => (
-                <div key={i} className="flex items-start gap-3">
+            <div className="space-y-3">
+              {steps.map((step) => (
+                <div key={step.label} className="flex gap-3">
                   <div className="mt-0.5">
                     {step.completed ? (
-                      <CheckCircle2 size={20} className="text-primary" />
+                      <CheckCircle2 className="w-5 h-5 text-primary" />
                     ) : (
-                      <Circle size={20} className="text-border" />
+                      <Circle className="w-5 h-5 text-muted-foreground" />
                     )}
                   </div>
                   <div>
-                    <p className={`text-sm font-semibold ${step.completed ? "text-foreground" : "text-muted-foreground"}`}>
+                    <p className={`text-sm font-medium ${step.completed ? "" : "text-muted-foreground"}`}>
                       {step.label}
                     </p>
                     <p className="text-xs text-muted-foreground">{step.detail}</p>
@@ -269,219 +162,125 @@ const Index = () => {
                 </div>
               ))}
             </div>
-            <Button
-              onClick={advanceStep}
-              variant="outline"
-              size="sm"
-              className="mt-4 w-full"
-            >
+            <Button variant="outline" size="sm" onClick={advanceStep} className="w-full">
               Advance Status (Demo)
             </Button>
           </motion.div>
 
-          {/* Total Recycled */}
           <motion.div
-            custom={3}
-            variants={cardVariant}
-            initial="hidden"
-            animate="visible"
-            className="bg-primary rounded-2xl p-6 flex flex-col justify-end min-h-[180px]"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="rounded-2xl border bg-card p-6 flex flex-col justify-between"
           >
-            <p className="text-xs font-bold tracking-widest uppercase text-primary-foreground/70">Total Recycled</p>
-            <div className="flex items-end justify-between mt-2">
-              <p className="text-5xl font-extrabold text-primary-foreground">
-                {stats.totalRecycled} <span className="text-lg font-medium text-primary-foreground/60">kg</span>
+            <h3 className="font-semibold">Total Recycled</h3>
+            <div className="flex items-end justify-between mt-4">
+              <p className="text-4xl font-bold">
+                {stats.totalRecycled} <span className="text-lg text-muted-foreground">kg</span>
               </p>
-              <Leaf size={32} className="text-primary-foreground/30" />
+              <Leaf className="w-8 h-8 text-primary" />
             </div>
           </motion.div>
 
-          {/* Eco Credits */}
           <motion.div
-            custom={4}
-            variants={cardVariant}
-            initial="hidden"
-            animate="visible"
-            className="bg-primary rounded-2xl p-6 flex flex-col justify-end min-h-[180px]"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="rounded-2xl border bg-card p-6 flex flex-col justify-between"
           >
-            <p className="text-xs font-bold tracking-widest uppercase text-primary-foreground/70">Eco Credits</p>
-            <div className="flex items-end justify-between mt-2">
-              <p className="text-5xl font-extrabold text-primary-foreground">
-                {stats.ecoCredits.toLocaleString()}
-              </p>
-              <Star size={32} className="text-primary-foreground/30" />
+            <h3 className="font-semibold">Eco Credits</h3>
+            <div className="flex items-end justify-between mt-4">
+              <p className="text-4xl font-bold">{stats.ecoCredits.toLocaleString()}</p>
+              <Star className="w-8 h-8 text-primary" />
             </div>
           </motion.div>
         </div>
 
-        {/* Recent Activity */}
-        <motion.div
-          custom={5}
-          variants={cardVariant}
-          initial="hidden"
-          animate="visible"
-          className="bg-card rounded-2xl border border-border p-6"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold">Recent Activity</h3>
+        {/* Activity */}
+        <div className="rounded-2xl border bg-card p-6">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="font-semibold">Recent Activity</h3>
             <Button
               variant="link"
-              onClick={() => toast(`Showing all activity — ${activity.length} entries total.`)}
+              onClick={() => toast(`Showing all activity — ${activity.length} entries.`)}
               className="text-primary font-semibold p-0 h-auto"
             >
               View All
             </Button>
           </div>
-          <div className="divide-y divide-border">
-            {filteredActivity.length === 0 && (
-              <p className="text-sm text-muted-foreground py-6 text-center">No activity matches your search.</p>
-            )}
-            {filteredActivity.map((item) => (
-              <Button
+          <div className="divide-y">
+            {activity.map((item) => (
+              <button
                 key={item.id}
-                variant="ghost"
                 onClick={() => {
                   setSelectedActivity(item);
                   setActivityOpen(true);
                 }}
-                className="w-full h-auto flex items-center justify-between py-4 hover:bg-muted/50 rounded-lg transition-colors text-left"
+                className="w-full flex items-center justify-between py-4 hover:bg-muted/50 rounded-lg transition-colors text-left px-2"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center">
-                    <Package size={16} className="text-primary" />
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Package className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold">{item.category}</p>
-                    <p className="text-xs text-muted-foreground">{item.type} • {item.date}</p>
+                    <p className="font-medium">{item.category}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {item.type} • {item.date}
+                    </p>
                   </div>
                 </div>
-                <div className="text-right flex items-center gap-3">
-                  <div>
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
                     <p className="text-sm font-semibold text-primary">+{item.points} pts</p>
                     <p className="text-xs text-muted-foreground">{item.status}</p>
                   </div>
-                  <ChevronRight size={16} className="text-muted-foreground" />
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
                 </div>
-              </Button>
+              </button>
             ))}
           </div>
-        </motion.div>
-      </main>
+        </div>
+      </div>
 
-      {/* ── Pickup Request Modal ── */}
-      <PickupRequestModal
-        isOpen={pickupOpen}
+      {/* Pickup Modal (3 steps, AI volume integrated) */}
+      <RequestPickupModal
+        open={pickupOpen}
         onOpenChange={setPickupOpen}
         onSubmit={handlePickupSubmit}
       />
 
-      {/* ── AI Scan Dialog ── */}
-      <Dialog open={scanOpen} onOpenChange={setScanOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>AI Volume Check</DialogTitle>
-            <DialogDescription>Upload a photo of your waste pile for instant volume estimation.</DialogDescription>
-          </DialogHeader>
-          <div className="border-2 border-dashed border-border rounded-xl p-10 text-center bg-muted/30">
-            <ScanLine size={36} className="mx-auto text-primary mb-3" />
-            <p className="text-sm font-semibold">Drop image here or click to upload</p>
-            <p className="text-xs text-muted-foreground mt-1">PNG, JPG up to 10MB</p>
-            <Input type="file" accept="image/*" className="mt-4" />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setScanOpen(false)}>Cancel</Button>
-            <Button onClick={handleScan}>Run AI Estimate</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* ── Activity Detail Dialog ── */}
+      {/* Activity Detail */}
       <Dialog open={activityOpen} onOpenChange={setActivityOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{selectedActivity?.category}</DialogTitle>
-            <DialogDescription>{selectedActivity?.type} • {selectedActivity?.date}</DialogDescription>
+            <DialogDescription>
+              {selectedActivity?.type} • {selectedActivity?.date}
+            </DialogDescription>
           </DialogHeader>
           {selectedActivity && (
-            <div className="space-y-3">
-              <div className="flex justify-between text-sm">
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
                 <span className="text-muted-foreground">Status</span>
-                <Badge variant="secondary">{selectedActivity.status}</Badge>
+                <span className="font-medium">{selectedActivity.status}</span>
               </div>
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between">
                 <span className="text-muted-foreground">Points Earned</span>
-                <span className="font-semibold text-primary">+{selectedActivity.points} pts</span>
+                <span className="font-medium">+{selectedActivity.points} pts</span>
               </div>
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between">
                 <span className="text-muted-foreground">Reference ID</span>
-                <span className="font-mono text-xs">#{selectedActivity.id}</span>
+                <span className="font-medium">#{selectedActivity.id}</span>
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button onClick={() => setActivityOpen(false)}>Close</Button>
+            <Button variant="outline" onClick={() => setActivityOpen(false)}>
+              Close
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* ── Notifications Sheet ── */}
-      <Sheet open={notifOpen} onOpenChange={setNotifOpen}>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>Notifications</SheetTitle>
-            <SheetDescription>{unreadCount} unread updates</SheetDescription>
-          </SheetHeader>
-          <div className="mt-6 space-y-3">
-            {notifications.map((n) => (
-              <div
-                key={n.id}
-                className={`p-3 rounded-lg border ${n.unread ? "bg-primary/5 border-primary/20" : "bg-card border-border"}`}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm font-semibold">{n.title}</p>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">{n.time}</span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">{n.detail}</p>
-              </div>
-            ))}
-          </div>
-          {unreadCount > 0 && (
-            <Button onClick={markAllRead} variant="outline" className="w-full mt-4">
-              Mark all as read
-            </Button>
-          )}
-        </SheetContent>
-      </Sheet>
-
-      {/* ── Help Sheet ── */}
-      <Sheet open={helpOpen} onOpenChange={setHelpOpen}>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>Help & Support</SheetTitle>
-            <SheetDescription>Quick answers to common questions.</SheetDescription>
-          </SheetHeader>
-          <div className="mt-6 space-y-4 text-sm">
-            <div>
-              <p className="font-semibold">How do I schedule a pickup?</p>
-              <p className="text-muted-foreground mt-1">Click "Request New Pickup" on the hero card and fill in the form.</p>
-            </div>
-            <div>
-              <p className="font-semibold">What are Eco Credits?</p>
-              <p className="text-muted-foreground mt-1">Points earned per kg recycled. Redeemable for rewards.</p>
-            </div>
-            <div>
-              <p className="font-semibold">Need more help?</p>
-              <Button
-                variant="outline"
-                className="w-full mt-2"
-                onClick={() => toast("Support contacted — we'll get back within 24h.")}
-              >
-                Contact Support
-              </Button>
-            </div>
-          </div>
-        </SheetContent>
-      </Sheet>
     </div>
   );
 };
