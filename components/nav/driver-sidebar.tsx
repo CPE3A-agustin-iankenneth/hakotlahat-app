@@ -12,16 +12,18 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useWeatherAlertCount } from "@/hooks/use-weather-alert-count";
 
 const navItems = [
   { href: "/drv", label: "Route", icon: Map },
   { href: "/drv/schedule", label: "Schedule", icon: CalendarDays },
   { href: "/drv/points", label: "Points", icon: Trophy },
-  { href: "/drv/alerts", label: "Alerts", icon: Bell, badge: 3 },
+  { href: "/drv/alerts", label: "Alerts", icon: Bell },
 ];
 
 export function DriverSidebar() {
   const pathname = usePathname();
+  const alertCount = useWeatherAlertCount();
 
   return (
     <aside className="flex h-full w-60 flex-col border-r border-stone-800 bg-stone-950">
@@ -35,7 +37,8 @@ export function DriverSidebar() {
 
       {/* Nav */}
       <nav className="flex flex-1 flex-col gap-1 pr-px">
-        {navItems.map(({ href, label, icon: Icon, badge }) => {
+        {navItems.map(({ href, label, icon: Icon }) => {
+          const badge = label === "Alerts" ? alertCount : undefined;
           const isActive = href === "/drv"
             ? pathname === href
             : pathname === href || pathname.startsWith(href + "/");
