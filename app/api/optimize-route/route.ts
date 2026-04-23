@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
   const jobs = requests.map((r, i) => ({
     id: i + 1,
     location: [r.longitude, r.latitude] as [number, number],
-    priority: Math.min(r.priority_score ?? 1, 10),
+    priority: Math.min(r.priority_score ?? 1, 5),
     amount: [Math.max(1, Math.round((r.volume_estimate ?? 1) * 10))],
   }));
 

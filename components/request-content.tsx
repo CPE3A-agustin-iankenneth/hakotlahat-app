@@ -362,7 +362,7 @@ export function RequestsContent({
                     label="Priority"
                     value={
                       detailRequest.priority_score
-                        ? `${getPriorityLabel(detailRequest.priority_score)} (${detailRequest.priority_score}/10)`
+                        ? `${getPriorityLabel(detailRequest.priority_score)} (${detailRequest.priority_score}/5)`
                         : "Auto-assessed"
                     }
                   />

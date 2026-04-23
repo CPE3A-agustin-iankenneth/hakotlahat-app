@@ -307,7 +307,7 @@ export const RequestPickupModal = ({
                               Priority
                             </p>
                             <p className="font-bold text-lg text-foreground">
-                              {scanResult.priority_score}/10
+                              {scanResult.priority_score}/5
                             </p>
                           </div>
                         </div>
@@ -388,7 +388,7 @@ export const RequestPickupModal = ({
                     label="Priority"
                     value={
                       scanResult
-                        ? `${priorityLabel(scanResult.priority_score)} (${scanResult.priority_score}/10)`
+                        ? `${priorityLabel(scanResult.priority_score)} (${scanResult.priority_score}/5)`
                         : "Auto-assessed"
                     }
                   />

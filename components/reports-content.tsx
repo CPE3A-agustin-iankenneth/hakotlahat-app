@@ -117,6 +117,8 @@ export function ReportsContent({ userId }: ReportsContentProps) {
   ]);
 
   const [totalRecycledKg, setTotalRecycledKg] = useState(0);
+  const [ecoPoints, setEcoPoints] = useState(0);
+  const [totalRequests, setTotalRequests] = useState(0);
   const [communityRank, setCommunityRank] = useState<string | null>(null);
   const [collectionStreakWeeks, setCollectionStreakWeeks] = useState(0);
 
@@ -215,27 +217,28 @@ export function ReportsContent({ userId }: ReportsContentProps) {
         );
 
         let totalRecycled = 0;
+        let fetchedEcoPoints = 0;
+        let fetchedTotalRequests = 0;
         if (userId) {
-          const { data: profile, error: profileError } = await supabase
-            .from("users")
-            .select("total_recycled")
-            .eq("id", userId)
+          const { data: resScore, error: scoreError } = await supabase
+            .from("res_score")
+            .select("total_recycled, eco_points, total_requests")
+            .eq("user_id", userId)
             .single();
 
-          if (profileError) {
+          if (scoreError) {
             console.error(
-              "Supabase error:",
-              profileError.message,
-              profileError.details,
-              profileError.hint,
-              profileError.code,
+              "res_score fetch error:",
+              scoreError.message,
+              scoreError.details,
+              scoreError.hint,
+              scoreError.code,
             );
           }
 
-          const collectedCount = myRequests.filter(
-            (request) => request.status === "collected",
-          ).length;
-          totalRecycled = Number(profile?.total_recycled ?? collectedCount * 5);
+          totalRecycled = Number(resScore?.total_recycled ?? 0);
+          fetchedEcoPoints = Number(resScore?.eco_points ?? 0);
+          fetchedTotalRequests = Number(resScore?.total_requests ?? 0);
         }
 
         const streak = computeCollectionStreak(weeksWithCollections);
@@ -244,6 +247,8 @@ export function ReportsContent({ userId }: ReportsContentProps) {
         setWeeklyData(weeks);
         setCompositionData(composition);
         setTotalRecycledKg(totalRecycled);
+        setEcoPoints(fetchedEcoPoints);
+        setTotalRequests(fetchedTotalRequests);
         setCollectionStreakWeeks(streak);
         setCommunityRank(rankLabel);
       } catch (err) {
@@ -308,6 +313,14 @@ export function ReportsContent({ userId }: ReportsContentProps) {
                     <span className="text-3xl font-semibold text-muted-foreground">
                       kg
                     </span>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Eco Points</p>
+                    <p className="text-2xl font-bold text-primary">{ecoPoints.toLocaleString()} pts</p>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Lifetime Requests</p>
+                    <p className="text-2xl font-bold text-foreground">{totalRequests}</p>
                   </div>
                   <div className="rounded-full bg-primary/20 px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm">
                     <p className="text-xs text-primary">Community Rank</p>

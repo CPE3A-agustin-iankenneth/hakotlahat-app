@@ -690,7 +690,7 @@ export function DriverMapClient({
                 <p className="text-xs text-muted-foreground uppercase tracking-wide">Priority</p>
                 <p className="text-3xl font-bold text-primary mt-2">
                   {selectedRequest.priority_score}
-                  <span className="text-lg text-muted-foreground ml-1">/10</span>
+                  <span className="text-lg text-muted-foreground ml-1">/5</span>
                 </p>
               </div>
             </div>
