@@ -12,12 +12,13 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useWeatherAlertCount } from "@/hooks/use-weather-alert-count";
 
 const navItems = [
   { href: "/drv", label: "Route", icon: Map },
   { href: "/drv/schedule", label: "Schedule", icon: CalendarDays },
   { href: "/drv/points", label: "Points", icon: Trophy },
-  { href: "/drv/alerts", label: "Alerts", icon: Bell, badge: 3 },
+  { href: "/drv/alerts", label: "Alerts", icon: Bell },
 ];
 
 export function DriverMobileHeader() {
@@ -46,10 +47,12 @@ export function DriverMobileHeader() {
 
 export function DriverBottomNav() {
   const pathname = usePathname();
+  const alertCount = useWeatherAlertCount();
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around rounded-t-3xl border-t border-stone-800 bg-stone-950 px-2 pb-6 pt-3 shadow-[0px_-4px_20px_0px_rgba(0,0,0,0.4)]">
-      {navItems.map(({ href, label, icon: Icon, badge }) => {
+      {navItems.map(({ href, label, icon: Icon }) => {
+        const badge = label === "Alerts" ? alertCount : undefined;
         const isActive = href === "/drv"
           ? pathname === href
           : pathname === href || pathname.startsWith(href + "/");
