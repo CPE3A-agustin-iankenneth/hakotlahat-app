@@ -74,3 +74,27 @@ export interface DriverWithSession {
   avatar_url: string | null;
   activeSession: MunDriverSession | null;
 }
+
+export interface ResScore {
+  id: string;
+  user_id: string;
+  total_recycled: number;
+  eco_points: number;
+  total_requests: number;
+  streak_days: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DrvScore {
+  id: string;
+  user_id: string;
+  total_collections: number;
+  routes_completed: number;
+  total_distance_km: number;
+  on_time_rate: number;
+  avg_route_duration_min: number;
+  drv_points: number;
+  created_at: string;
+  updated_at: string;
+}

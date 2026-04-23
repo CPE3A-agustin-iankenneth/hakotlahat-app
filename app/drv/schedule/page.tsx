@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   CheckCircle2,
@@ -133,8 +132,6 @@ export default async function SchedulePage() {
         </div>
 
         <div className="relative px-5 py-4 md:px-6">
-          <div className="pointer-events-none absolute bottom-4 left-9 top-4 hidden w-px bg-gradient-to-b from-primary/60 via-border to-muted md:block" />
-
           {stops.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
               <Route className="h-12 w-12 mb-4 opacity-30" />
@@ -153,17 +150,6 @@ export default async function SchedulePage() {
                   stops.find((s) => statusMap.get(s.requestId) !== "collected")?.requestId ===
                     stop.requestId;
 
-                const badges: string[] = [];
-                if (isCurrent) badges.push("Current Stop");
-                if (stop.priority_score >= 4) badges.push("High Priority");
-                if ((stop.volume_estimate ?? 0) > 5) badges.push("High Volume");
-
-                const badgeStyles: Record<string, string> = {
-                  "Current Stop": "bg-primary text-primary-foreground",
-                  "High Priority": "bg-destructive text-destructive-foreground",
-                  "High Volume": "bg-secondary text-secondary-foreground",
-                };
-
                 return (
                   <Card
                     key={stop.requestId}
@@ -175,29 +161,6 @@ export default async function SchedulePage() {
                           : "border-border bg-card/70"
                     }`}
                   >
-                    <span
-                      className={`absolute -left-7 top-9 hidden h-3.5 w-3.5 rounded-full border md:block ${
-                        isCurrent
-                          ? "border-primary-foreground bg-primary ring-4 ring-primary/20"
-                          : isDone
-                            ? "border-secondary bg-secondary"
-                            : "border-border bg-muted"
-                      }`}
-                    />
-
-                    {badges.length > 0 && (
-                      <div className="mb-3 flex flex-wrap gap-2">
-                        {badges.map((badge) => (
-                          <Badge
-                            key={badge}
-                            className={`text-[10px] uppercase tracking-wide ${badgeStyles[badge]}`}
-                          >
-                            {badge}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-
                     <div className="flex items-center justify-between gap-4">
                       <div className="min-w-0">
                         <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">

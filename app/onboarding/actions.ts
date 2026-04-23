@@ -35,9 +35,18 @@ export async function completeOnboarding(data: {
 
   if (userError) throw new Error(userError.message);
 
-
+  // Seed the appropriate score row with all defaults (idempotent via ON CONFLICT)
+  if (data.role === "resident") {
+    const { error: scoreError } = await supabase
+      .from("res_score")
+      .upsert({ user_id: user.id }, { onConflict: "user_id" });
+    if (scoreError) console.error("res_score seed error:", scoreError.message);
+  } else if (data.role === "driver") {
+    const { error: scoreError } = await supabase
+      .from("drv_score")
+      .upsert({ user_id: user.id }, { onConflict: "user_id" });
+    if (scoreError) console.error("drv_score seed error:", scoreError.message);
+  }
 
   redirect(data.role === "driver" ? "/drv" : "/res");
 }
-
-

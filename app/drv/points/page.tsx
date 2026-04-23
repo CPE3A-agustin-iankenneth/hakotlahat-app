@@ -1,83 +1,140 @@
+import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Flame, CheckCircle2, TrendingUp, Navigation, ChevronRight } from "lucide-react";
 
+interface LeaderboardEntry {
+  rank: number;
+  name: string;
+  role: string;
+  efficiency: number;
+  routes: number;
+  points: number;
+  isCurrentUser?: boolean;
+}
+
 export default async function DriverPointsPage() {
+  const supabase = await createClient();
+
+  // Get current user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Fetch current driver's score
+  let myScore = {
+    total_collections: 0,
+    routes_completed: 0,
+    total_distance_km: 0,
+    on_time_rate: 1.0,
+    avg_route_duration_min: 0,
+    drv_points: 0,
+  };
+
+  let myName = "Driver";
+
+  if (user) {
+    const [scoreResult, profileResult] = await Promise.all([
+      supabase
+        .from("drv_score")
+        .select(
+          "total_collections, routes_completed, total_distance_km, on_time_rate, avg_route_duration_min, drv_points"
+        )
+        .eq("user_id", user.id)
+        .single(),
+      supabase
+        .from("users")
+        .select("full_name")
+        .eq("id", user.id)
+        .single(),
+    ]);
+
+    if (scoreResult.data) myScore = scoreResult.data;
+    if (profileResult.data?.full_name) myName = profileResult.data.full_name;
+  }
+
+  // Fetch leaderboard: top 10 drivers by drv_points joined with user names
+  const { data: leaderboardRaw } = await supabase
+    .from("drv_score")
+    .select("user_id, drv_points, routes_completed, on_time_rate")
+    .order("drv_points", { ascending: false })
+    .limit(10);
+
+  // Fetch names for leaderboard entries
+  const leaderboard: LeaderboardEntry[] = [];
+
+  if (leaderboardRaw && leaderboardRaw.length > 0) {
+    const userIds = leaderboardRaw.map((row) => row.user_id);
+    const { data: usersData } = await supabase
+      .from("users")
+      .select("id, full_name")
+      .in("id", userIds);
+
+    const nameMap = Object.fromEntries(
+      (usersData || []).map((u) => [u.id, u.full_name ?? "Driver"])
+    );
+
+    leaderboardRaw.forEach((row, idx) => {
+      leaderboard.push({
+        rank: idx + 1,
+        name: nameMap[row.user_id] ?? "Driver",
+        role: "Driver",
+        efficiency: Math.round((row.on_time_rate ?? 1.0) * 100 * 10) / 10,
+        routes: row.routes_completed ?? 0,
+        points: row.drv_points ?? 0,
+        isCurrentUser: row.user_id === user?.id,
+      });
+    });
+  }
+
+  // Determine current user's rank in leaderboard
+  const myRankEntry = leaderboard.find((e) => e.isCurrentUser);
+
+  const progressValue = myScore.drv_points;
+  const progressMax = 5000;
+  const percentage = Math.min((progressValue / progressMax) * 100, 100);
+  const circumference = 2 * Math.PI * 90;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+
+  const onTimePercent = Math.round((myScore.on_time_rate ?? 1.0) * 1000) / 10;
+
   const stats = [
     {
-      icon: Flame,
-      badge: "+200 Bonus",
-      badgeColor: "text-secondary",
-      title: "CURRENT STREAK",
-      value: "5 Days",
-    },
-    {
       icon: CheckCircle2,
-      badge: "Top 5%",
+      badge: myRankEntry ? `Rank #${myRankEntry.rank}` : "—",
       badgeColor: "text-accent",
-      title: "HIGH-PRIORITY CLEARS",
-      value: "28",
+      title: "TOTAL COLLECTIONS",
+      value: myScore.total_collections.toString(),
     },
     {
       icon: TrendingUp,
-      badge: "Global Avg: 92%",
+      badge: "On-Time Rate",
       badgeColor: "text-primary",
       title: "ON-TIME RATE",
-      value: "98.5%",
+      value: `${onTimePercent}%`,
     },
     {
       icon: Navigation,
-      badge: "Platinum Goal",
+      badge: "Lifetime",
       badgeColor: "text-secondary-foreground",
       title: "DISTANCE DRIVEN",
-      value: "1,240 km",
+      value: `${Number(myScore.total_distance_km).toLocaleString()} km`,
+    },
+    {
+      icon: Flame,
+      badge: "Completed",
+      badgeColor: "text-secondary",
+      title: "ROUTES COMPLETED",
+      value: myScore.routes_completed.toString(),
     },
   ];
 
-  const leaderboard = [
-    {
-      rank: 1,
-      name: "Marco P.",
-      role: "Regional Leader • Hub",
-      efficiency: 99.2,
-      routes: 142,
-      points: 1420,
-      bgColor: "bg-secondary/20",
-      borderColor: "border-secondary/30",
-      rankColor: "bg-secondary",
-    },
-    {
-      rank: 2,
-      name: "Alex R.",
-      role: "Elite Driver • Hub-4",
-      efficiency: 98.5,
-      routes: 128,
-      points: 1250,
-      badge: "YOU",
-      badgeBg: "bg-primary",
-      bgColor: "bg-muted/50",
-      borderColor: "border-border",
-      rankColor: "bg-muted",
-    },
-    {
-      rank: 3,
-      name: "Sarah L.",
-      role: "Elite Driver • Hub-2",
-      efficiency: 97.8,
-      routes: 115,
-      points: 1180,
-      bgColor: "bg-accent/20",
-      borderColor: "border-accent/30",
-      rankColor: "bg-accent",
-    },
+  const rankColors = [
+    { bg: "bg-secondary/20", border: "border-secondary/30", rank: "bg-secondary" },
+    { bg: "bg-muted/50",     border: "border-border",        rank: "bg-muted" },
+    { bg: "bg-accent/20",   border: "border-accent/30",     rank: "bg-accent" },
   ];
-
-  const progressValue = 1250;
-  const progressMax = 5000;
-  const percentage = (progressValue / progressMax) * 100;
-  const circumference = 2 * Math.PI * 90;
-  const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
   return (
     <div className="min-h-screen bg-background text-foreground font-sans p-8">
@@ -91,17 +148,26 @@ export default async function DriverPointsPage() {
                 Performance Overview
               </p>
               <h1 className="text-5xl font-extrabold tracking-tight leading-tight">
-                Excellent Work, Alex!
+                {myScore.drv_points > 0
+                  ? `Excellent Work, ${myName.split(" ")[0]}!`
+                  : `Welcome, ${myName.split(" ")[0]}!`}
               </h1>
             </div>
 
             <Button className="bg-primary hover:bg-primary/90 text-foreground font-bold rounded-full w-fit px-6 py-2">
-              ✓ ECO-MASTER TIER
+              {myScore.drv_points >= 4000
+                ? "✓ ECO-MASTER TIER"
+                : myScore.drv_points >= 2000
+                ? "✓ ELITE TIER"
+                : myScore.drv_points >= 500
+                ? "✓ ACTIVE DRIVER"
+                : "✦ GETTING STARTED"}
             </Button>
 
             <p className="text-muted-foreground text-sm max-w-md leading-relaxed">
-              You're in the top 2% of fleet efficiency this month. Keep up the
-              clean driving habits to maintain your status.
+              {myRankEntry
+                ? `You're ranked #${myRankEntry.rank} in the fleet leaderboard. Keep completing routes to climb higher!`
+                : "Complete routes to earn points and climb the fleet leaderboard!"}
             </p>
           </div>
 
@@ -157,7 +223,7 @@ export default async function DriverPointsPage() {
           <div className="flex items-center justify-between mb-8">
             <div>
               <h2 className="text-2xl font-extrabold mb-1">Fleet Leaderboard</h2>
-              <p className="text-muted-foreground text-sm">Weekly rankings across all regional hubs</p>
+              <p className="text-muted-foreground text-sm">Rankings across all drivers</p>
             </div>
             <Button variant="link" className="text-primary font-semibold hover:text-primary/80 flex items-center gap-1 p-0 h-auto">
               View Full Rankings <ChevronRight size={16} />
@@ -169,64 +235,71 @@ export default async function DriverPointsPage() {
             <div className="grid grid-cols-6 gap-4 px-4 py-3 text-xs uppercase font-bold text-muted-foreground border-b border-border">
               <div>Rank</div>
               <div className="col-span-2">Driver</div>
-              <div>Efficiency Rating</div>
-              <div>Completed Tasks</div>
+              <div>On-Time Rate</div>
+              <div>Routes Done</div>
               <div className="text-right">Total Points</div>
             </div>
 
             {/* Leaderboard Rows */}
-            {leaderboard.map((driver) => (
-              <div
-                key={driver.rank}
-                className={`grid grid-cols-6 gap-4 items-center px-4 py-4 rounded-2xl border ${driver.bgColor} ${driver.borderColor} transition-all hover:border-opacity-100`}
-              >
-                {/* Rank */}
-                <div className="flex justify-center">
-                  <div className={`w-8 h-8 rounded-full ${driver.rankColor} flex items-center justify-center font-bold text-foreground text-sm`}>
-                    {driver.rank}
-                  </div>
-                </div>
-
-                {/* Driver Info */}
-                <div className="col-span-2 flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-full ${driver.rankColor} flex items-center justify-center text-foreground font-bold`}>
-                    {driver.name.charAt(0)}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold text-foreground">{driver.name}</p>
-                      {driver.badge && (
-                        <Badge className={`${driver.badgeBg} text-foreground text-xs`}>
-                          {driver.badge}
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground">{driver.role}</p>
-                  </div>
-                </div>
-
-                {/* Efficiency Bar */}
-                <div>
-                  <div className="w-full bg-muted-foreground/20 rounded-full h-2 overflow-hidden">
-                    <div
-                      className="bg-primary h-full transition-all"
-                      style={{ width: `${driver.efficiency}%` }}
-                    />
-                  </div>
-                  <p className="text-sm font-semibold text-primary mt-1">{driver.efficiency}%</p>
-                </div>
-
-                {/* Routes */}
-                <div className="text-center">
-                  <p className="text-foreground font-semibold">{driver.routes} Routes</p>
-                </div>
-
-                {/* Points */}
-                <div className="text-right">
-                  <p className="text-foreground font-extrabold text-lg">{driver.points.toLocaleString()} pts</p>
-                </div>
+            {leaderboard.length === 0 ? (
+              <div className="py-8 text-center text-muted-foreground text-sm">
+                No leaderboard data yet. Complete routes to appear here!
               </div>
-            ))}
+            ) : (
+              leaderboard.map((driver) => {
+                const colors = rankColors[Math.min(driver.rank - 1, rankColors.length - 1)];
+                return (
+                  <div
+                    key={driver.rank}
+                    className={`grid grid-cols-6 gap-4 items-center px-4 py-4 rounded-2xl border ${colors.bg} ${colors.border} transition-all hover:border-opacity-100`}
+                  >
+                    {/* Rank */}
+                    <div className="flex justify-center">
+                      <div className={`w-8 h-8 rounded-full ${colors.rank} flex items-center justify-center font-bold text-foreground text-sm`}>
+                        {driver.rank}
+                      </div>
+                    </div>
+
+                    {/* Driver Info */}
+                    <div className="col-span-2 flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-full ${colors.rank} flex items-center justify-center text-foreground font-bold`}>
+                        {driver.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-foreground">{driver.name}</p>
+                          {driver.isCurrentUser && (
+                            <Badge className="bg-primary text-foreground text-xs">YOU</Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">{driver.role}</p>
+                      </div>
+                    </div>
+
+                    {/* Efficiency Bar */}
+                    <div>
+                      <div className="w-full bg-muted-foreground/20 rounded-full h-2 overflow-hidden">
+                        <div
+                          className="bg-primary h-full transition-all"
+                          style={{ width: `${Math.min(driver.efficiency, 100)}%` }}
+                        />
+                      </div>
+                      <p className="text-sm font-semibold text-primary mt-1">{driver.efficiency}%</p>
+                    </div>
+
+                    {/* Routes */}
+                    <div className="text-center">
+                      <p className="text-foreground font-semibold">{driver.routes} Routes</p>
+                    </div>
+
+                    {/* Points */}
+                    <div className="text-right">
+                      <p className="text-foreground font-extrabold text-lg">{driver.points.toLocaleString()} pts</p>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </Card>
       </div>
