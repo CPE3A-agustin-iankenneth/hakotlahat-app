@@ -9,7 +9,10 @@ import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { createClient } from "@/lib/supabase/client";
 import { uploadImage } from "@/lib/upload-image";
-import { RequestPickupModal, RequestPickupData } from "@/components/pickup-request-modal";
+import {
+  RequestPickupModal,
+  RequestPickupData,
+} from "@/components/pickup-request-modal";
 
 interface PickupRequest {
   id: string;
@@ -56,7 +59,10 @@ export function RequestsContent({
   const handleSubmitRequest = async (data: RequestPickupData) => {
     const supabase = createClient();
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
       toast.error("You must be logged in to submit a request.");
       return;
@@ -75,10 +81,12 @@ export function RequestsContent({
         imageUrl = await uploadImage(
           data.imageFile,
           "pickup-images",
-          `${user.id}/${Date.now()}.${ext}`
+          `${user.id}/${Date.now()}.${ext}`,
         );
       } catch (err) {
-        toast.error("Image upload failed — request will be submitted without photo.");
+        toast.error(
+          "Image upload failed — request will be submitted without photo.",
+        );
         console.error("Image upload failed:", err);
       }
     }
@@ -109,7 +117,6 @@ export function RequestsContent({
   };
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
 
   const formatDate = (dateString: string): string => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -139,10 +146,10 @@ export function RequestsContent({
   const renderRequestCard = (request: PickupRequest) => (
     <Card
       key={request.id}
-      className="flex flex-row items-center p-5 rounded-3xl hover:shadow-md hover:scale-[1.02] transition-all duration-300"
+      className="flex flex-col gap-4 rounded-3xl p-5 transition-all duration-300 hover:shadow-md hover:scale-[1.02] sm:flex-row sm:items-center"
     >
       {/* Image Section */}
-      <div className="w-40 h-40 flex-shrink-0 mr-6 bg-gray-200 rounded-2xl overflow-hidden">
+      <div className="h-48 w-full flex-shrink-0 overflow-hidden rounded-2xl bg-gray-200 sm:h-40 sm:w-40">
         {request.image_url ? (
           <img
             src={request.image_url}
@@ -157,8 +164,8 @@ export function RequestsContent({
       </div>
 
       {/* Details Section */}
-      <div className="flex-1 flex flex-col h-full">
-        <div className="flex justify-between items-center mb-1">
+      <div className="flex h-full w-full flex-1 flex-col">
+        <div className="mb-1 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <span className="font-bold text-foreground">
             {formatDate(request.created_at)}
           </span>
@@ -191,24 +198,25 @@ export function RequestsContent({
         <div className="flex items-start text-muted-foreground mb-4">
           <MapPin className="w-4 h-4 mr-2 mt-1 flex-shrink-0" />
           <p className="text-sm font-medium leading-snug">
-            {typeof request.latitude === 'number' && typeof request.longitude === 'number'
+            {typeof request.latitude === "number" &&
+            typeof request.longitude === "number"
               ? `${request.latitude.toFixed(4)}°N, ${request.longitude.toFixed(4)}°E`
               : "Location not available"}
           </p>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-between mt-auto">
+        <div className="mt-auto flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Button
             variant="outline"
-            className="rounded-full border-2 font-bold px-6 text-primary hover:bg-primary/10"
+            className="w-full rounded-full border-2 px-6 font-bold text-primary hover:bg-primary/10 sm:w-auto"
           >
             View Details
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="text-destructive hover:text-destructive/80 hover:bg-destructive/10"
+            className="self-end text-destructive hover:text-destructive/80 hover:bg-destructive/10 sm:self-auto"
             onClick={() => handleDelete(request.id)}
             disabled={isDeleting === request.id}
           >
@@ -222,7 +230,7 @@ export function RequestsContent({
   return (
     <div>
       {/* Header Section */}
-      <div className="flex justify-between items-start px-10 pt-10">
+      <div className="flex items-start justify-between px-4 pt-6 sm:px-10 sm:pt-10">
         <div>
           <h1 className="text-4xl font-bold font-Roboto">Your Requests</h1>
           <p>Manage and track your active waste collection requests.</p>
@@ -237,7 +245,7 @@ export function RequestsContent({
       </div>
 
       {/* Tabs Section */}
-      <div className="px-10 pt-6">
+      <div className="px-4 pt-6 sm:px-10">
         <Tabs defaultValue="active">
           <TabsList>
             <TabsTrigger
@@ -256,7 +264,7 @@ export function RequestsContent({
 
           {/* Active Requests Tab */}
           <TabsContent value="active">
-            <div className="grid grid-cols-1 lg:grid-cols-2 text-foreground p-10 gap-6">
+            <div className="grid grid-cols-1 gap-4 p-4 text-foreground sm:gap-6 sm:p-6 xl:grid-cols-2 xl:p-10">
               {active.length > 0 ? (
                 active.map((request) => renderRequestCard(request))
               ) : (
@@ -269,7 +277,7 @@ export function RequestsContent({
 
           {/* History Requests Tab */}
           <TabsContent value="history">
-            <div className="grid grid-cols-1 lg:grid-cols-2 text-foreground p-10 gap-6">
+            <div className="grid grid-cols-1 gap-4 p-4 text-foreground sm:gap-6 sm:p-6 xl:grid-cols-2 xl:p-10">
               {history.length > 0 ? (
                 history.map((request) => renderRequestCard(request))
               ) : (
@@ -281,7 +289,7 @@ export function RequestsContent({
           </TabsContent>
         </Tabs>
       </div>
-      <RequestPickupModal 
+      <RequestPickupModal
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
         onSubmit={handleSubmitRequest}

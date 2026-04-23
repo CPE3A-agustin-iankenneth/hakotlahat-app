@@ -45,7 +45,7 @@ export function DriverSidebar() {
                 "flex items-center gap-4 rounded-r-full px-6 py-4 text-[15px] font-medium transition-colors",
                 isActive
                   ? "border-l-4 border-green-500 bg-stone-800 pl-[20px] text-green-400"
-                  : "text-stone-500 hover:bg-stone-900 hover:text-stone-300"
+                  : "text-stone-500 hover:bg-stone-900 hover:text-stone-300",
               )}
             >
               <Icon className="h-[18px] w-[18px] shrink-0" />
@@ -63,11 +63,14 @@ export function DriverSidebar() {
       {/* Account */}
       <div className="border-t border-stone-800 p-4">
         <Button
+          asChild
           variant="ghost"
           className="w-full justify-start gap-3 text-stone-500 hover:bg-stone-900 hover:text-stone-300"
         >
-          <CircleUserRound className="h-5 w-5 shrink-0" />
-          <span className="text-sm font-medium">Account</span>
+          <Link href="/drv/account">
+            <CircleUserRound className="h-5 w-5 shrink-0" />
+            <span className="text-sm font-medium">Account</span>
+          </Link>
         </Button>
       </div>
     </aside>

@@ -30,12 +30,15 @@ export function ResidentMobileHeader() {
         <span className="text-sm font-bold text-foreground">HakotLahat</span>
       </div>
       <Button
+        asChild
         variant="ghost"
         size="icon"
         className="h-8 w-8 text-muted-foreground"
       >
-        <CircleUserRound className="h-5 w-5" />
-        <span className="sr-only">Account</span>
+        <Link href="/res/account">
+          <CircleUserRound className="h-5 w-5" />
+          <span className="sr-only">Account</span>
+        </Link>
       </Button>
     </header>
   );

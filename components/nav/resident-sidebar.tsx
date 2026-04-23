@@ -63,11 +63,14 @@ export function ResidentSidebar() {
       {/* Account */}
       <div className="border-t border-border p-4">
         <Button
+          asChild
           variant="ghost"
           className="w-full justify-start gap-3 text-muted-foreground hover:text-sidebar-foreground"
         >
-          <CircleUserRound className="h-5 w-5 shrink-0" />
-          <span className="text-sm font-medium">Account</span>
+          <Link href="/res/account">
+            <CircleUserRound className="h-5 w-5 shrink-0" />
+            <span className="text-sm font-medium">Account</span>
+          </Link>
         </Button>
       </div>
     </aside>

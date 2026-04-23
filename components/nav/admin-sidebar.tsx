@@ -52,7 +52,7 @@ export function AdminSidebar() {
                 "flex items-center gap-3 rounded-r-full px-6 py-3 text-sm font-medium transition-colors",
                 isActive
                   ? "bg-sidebar-accent text-sidebar-primary"
-                  : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+                  : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
               )}
             >
               <Icon className="h-[18px] w-[18px] shrink-0" />
@@ -68,11 +68,14 @@ export function AdminSidebar() {
           Municipality Admin
         </p>
         <Button
+          asChild
           variant="ghost"
           className="w-full justify-start gap-3 text-muted-foreground hover:text-sidebar-foreground"
         >
-          <CircleUserRound className="h-5 w-5 shrink-0" />
-          <span className="text-sm font-medium">Account</span>
+          <Link href="/admin/account">
+            <CircleUserRound className="h-5 w-5 shrink-0" />
+            <span className="text-sm font-medium">Account</span>
+          </Link>
         </Button>
       </div>
     </aside>

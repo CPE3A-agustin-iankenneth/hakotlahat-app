@@ -30,12 +30,15 @@ export function DriverMobileHeader() {
         <span className="text-sm font-bold text-stone-100">HakotLahat</span>
       </div>
       <Button
+        asChild
         variant="ghost"
         size="icon"
         className="h-8 w-8 text-stone-500 hover:bg-stone-900 hover:text-stone-300"
       >
-        <CircleUserRound className="h-5 w-5" />
-        <span className="sr-only">Account</span>
+        <Link href="/drv/account">
+          <CircleUserRound className="h-5 w-5" />
+          <span className="sr-only">Account</span>
+        </Link>
       </Button>
     </header>
   );
@@ -54,7 +57,9 @@ export function DriverBottomNav() {
             href={href}
             className={cn(
               "relative flex flex-col items-center gap-1 px-3 py-1 transition-colors",
-              isActive ? "text-green-400" : "text-stone-500 hover:text-stone-300"
+              isActive
+                ? "text-green-400"
+                : "text-stone-500 hover:text-stone-300",
             )}
           >
             {isActive && (
@@ -71,7 +76,7 @@ export function DriverBottomNav() {
             <span
               className={cn(
                 "text-[10px] font-bold uppercase tracking-wider",
-                isActive ? "text-green-400" : "text-stone-500"
+                isActive ? "text-green-400" : "text-stone-500",
               )}
             >
               {label}
