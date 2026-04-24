@@ -283,7 +283,7 @@ export function ReportsContent({ userId }: ReportsContentProps) {
   // ── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="p-6 bg-background min-h-screen space-y-6">
+    <div className="p-4 md:p-6 bg-background min-h-screen space-y-5 md:space-y-6">
       <div className="flex items-start gap-3">
         <div className="w-1 rounded-full bg-primary self-stretch" />
         <div>
@@ -307,10 +307,10 @@ export function ReportsContent({ userId }: ReportsContentProps) {
                 <p className="text-sm text-muted-foreground">Total Recycled</p>
                 <div className="flex flex-wrap items-end gap-6">
                   <div className="flex items-end gap-3">
-                    <p className="text-7xl font-bold tracking-tight text-foreground">
+                    <p className="text-5xl md:text-7xl font-bold tracking-tight text-foreground">
                       {totalRecycledKg}
                     </p>
-                    <span className="text-3xl font-semibold text-muted-foreground">
+                    <span className="text-2xl md:text-3xl font-semibold text-muted-foreground">
                       kg
                     </span>
                   </div>
