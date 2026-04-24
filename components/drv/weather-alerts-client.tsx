@@ -83,7 +83,7 @@ export function WeatherAlertsClient({ weather, warnings, fetchError }: Props) {
   const infoCount = warnings.filter((w) => w.severity === "info").length;
 
   return (
-    <main className="p-4 md:p-6 max-w-4xl mx-auto space-y-6">
+    <main className="p-4 md:p-6 max-w-4xl mx-auto space-y-5 md:space-y-6 overflow-x-hidden">
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Weather Alerts</h2>
@@ -119,7 +119,7 @@ export function WeatherAlertsClient({ weather, warnings, fetchError }: Props) {
       {weather && (
         <Card>
           <CardContent className="py-4">
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 md:gap-x-6 md:gap-y-3">
               {/* Condition icon + label */}
               <div className="flex items-center gap-2">
                 {getWeatherIcon(

@@ -322,21 +322,21 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Toaster />
-      <div className="max-w-7xl mx-auto px-6 py-10 space-y-8">
+      <div className="max-w-7xl mx-auto px-4 py-6 md:px-6 md:py-10 space-y-6 md:space-y-8">
         {/* Hero */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="rounded-3xl bg-gradient-to-br from-primary/15 via-primary/5 to-background border p-10"
+          className="rounded-3xl bg-gradient-to-br from-primary/15 via-primary/5 to-background border p-6 md:p-10"
         >
           <Badge className="bg-primary/15 text-primary hover:bg-primary/20 mb-4">
             Next Collection: Today
           </Badge>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight max-w-2xl">
+          <h1 className="text-2xl md:text-5xl font-bold tracking-tight max-w-2xl">
             Clean streets start at your doorstep.
           </h1>
-          <p className="text-muted-foreground mt-4 max-w-2xl text-lg">
+          <p className="text-muted-foreground mt-3 max-w-2xl text-sm md:text-lg">
             Schedule a bulk waste pickup in seconds and track our eco-friendly
             disposal process in real-time. Includes built-in AI volume
             estimation.

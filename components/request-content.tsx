@@ -249,7 +249,7 @@ export function RequestsContent({
       {/* Header Section */}
       <div className="flex items-start justify-between px-4 pt-6 sm:px-10 sm:pt-10">
         <div>
-          <h1 className="text-4xl font-bold font-Roboto">Your Requests</h1>
+          <h1 className="text-2xl md:text-4xl font-bold font-Roboto">Your Requests</h1>
           <p>Manage and track your active waste collection requests.</p>
         </div>
         <Button
